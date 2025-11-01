@@ -1,6 +1,7 @@
 import React from 'react';
-import { SafeAreaView } from 'react-native';
+import {SafeAreaView, View} from 'react-native';
 import styled from 'styled-components/native';
+import { gs } from '../../../ui/theme/GlobalStyles';
 
 const Container = styled(SafeAreaView)`
     flex: 1;
@@ -47,20 +48,18 @@ const SaveText = styled.Text`
   font-size: 16px;
 `;
 
-export const Save = ({ onPress }) => (
-    <SaveButton onPress={onPress}>
-        <SaveText>Save</SaveText>
-    </SaveButton>
-);
+
 
 
 export default function PreferencesScreen() {
     const [activity, setActivity] = React.useState('');
     const [time, setTime] = React.useState('');
     const [favorite, setFavorite] = React.useState('');
+    const [preferences, setPreferences] = React.useState(['']);
+
 
     return (
-        <Container>
+        <View style={gs.screen}>
             <Section>
                 <Title>1. Choose Activity</Title>
                 <OptionButton selected={activity === 'indoor'} onPress={() => setActivity('indoor')}>
@@ -91,7 +90,12 @@ export default function PreferencesScreen() {
                 </OptionButton>
             </Section>
 
-            <Section><Save></Save></Section>
-        </Container>
+            <Section><Save onPress={() => setPreferences([activity, time, favorite])}></Save></Section>
+        </View>
     );
 }
+export const Save = () => (
+    <SaveButton>
+        <SaveText>Save</SaveText>
+    </SaveButton>
+);

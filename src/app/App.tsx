@@ -15,6 +15,11 @@ import {
 } from 'react-native-safe-area-context';
 import PreferencesScreen from "../features/preferences/screens/PreferencesScreen";
 
+
+import HomeScreen from "../features/preferences/screens/HomeScreen";
+
+
+
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
 
@@ -33,7 +38,7 @@ function AppContent() {
 
   return (
     <View style={styles.container}>
-      <PreferencesScreen
+      <HomeScreen
 
       />
     </View>
