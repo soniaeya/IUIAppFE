@@ -1,55 +1,28 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View , Text} from 'react-native';
+import * as React from 'react';
 import { Provider as PaperProvider } from 'react-native-paper';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
-import PreferencesScreen from "../features/preferences/screens/PreferencesScreen";
-
-
-import HomeScreen from "../features/preferences/screens/HomeScreen";
+import HomeScreen from '../features/preferences/screens/HomeScreen';
+import PreferencesScreen from '../features/preferences/screens/PreferencesScreen';
 
 
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
 
-  return (
-      <PaperProvider>
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
-    </SafeAreaProvider>
-          </PaperProvider>
-  );
+const Stack = createNativeStackNavigator();
+
+export default function App() {
+    return (
+        <PaperProvider  settings={{
+            icon: props => <MaterialCommunityIcons {...props} />,
+        }}>
+            <NavigationContainer>
+                <Stack.Navigator initialRouteName="PreferencesScreen" screenOptions={{ headerShown: false }}>
+                    <Stack.Screen name="HomeScreen" component={HomeScreen} />
+                    <Stack.Screen name="PreferencesScreen" component={PreferencesScreen} />
+                </Stack.Navigator>
+            </NavigationContainer>
+        </PaperProvider>
+    );
 }
-
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
-
-  return (
-    <View style={styles.container}>
-      <HomeScreen
-
-      />
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-      backgroundColor: '#C2B280',
-  },
-});
-
-export default App;
