@@ -65,9 +65,8 @@ const SaveText = styled.Text`
 export default function PreferencesScreen() {
     const navigation = useNavigation();
     const [activity, setActivity] = React.useState('');
+    const [env, setEnv] = React.useState('');
     const [time, setTime] = React.useState('');
-    const [favorites, setFavorite] = React.useState('');
-    const [preferences, setPreferences] = React.useState(['']);
     const [isSaving, setIsSaving] = useState(false);
 
     const BASE_URL =
@@ -75,10 +74,49 @@ export default function PreferencesScreen() {
 
 
 
+    // ---- Send state to backend here ----
     const handleSave = async () => {
-        navigation.navigate(MapScreen);
+        try {
+            setIsSaving(true);
 
+            const payload = {
+                activity,
+                time,
+                env
+            };
+
+            const response = await fetch(`${BASE_URL}/api/preferences/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Add auth headers here if needed
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                // backend returned 4xx/5xx
+                const errorText = await response.text();
+                console.log('Save failed:', errorText);
+                // Show a toast/snackbar here instead of alert if you prefer
+                alert('Failed to save preferences');
+                return;
+            }
+
+            const data = await response.json();
+            console.log('Preferences saved:', data);
+
+            // ✅ Only navigate after successful save
+            navigation.navigate('MapScreen'); // use your route name string here
+
+        } catch (err) {
+            console.error('Error saving preferences:', err);
+            alert('An error occurred while saving preferences');
+        } finally {
+            setIsSaving(false);
+        }
     };
+
 
     return (
         <View style={gs.screen}>
@@ -87,15 +125,15 @@ export default function PreferencesScreen() {
             </MainTitleDiv>
             <ItemPreferenceDiv>
                 <Title>Activity</Title>
-                <SearchBar ></SearchBar>
+                <SearchBar value={activity} onChange={setActivity} ></SearchBar>
             </ItemPreferenceDiv>
             <ItemPreferenceDiv>
 
                 <Title>Environment</Title>
-                <OptionButton  selected={activity === 'indoor'} onPress={() => setActivity('indoor')}>
+                <OptionButton  selected={env === 'indoor'} onPress={() => setEnv('indoor')}>
                     <OptionText style={{color: '#FFFFFF'}}>Indoor</OptionText>
                 </OptionButton>
-                <OptionButton selected={activity === 'outdoor'} onPress={() => setActivity('outdoor')}>
+                <OptionButton selected={env === 'outdoor'} onPress={() => setEnv('outdoor')}>
                     <OptionText style={{color: '#FFFFFF'}}>Outdoor</OptionText>
                 </OptionButton>
             </ItemPreferenceDiv>

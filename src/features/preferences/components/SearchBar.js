@@ -5,7 +5,7 @@ import { View, StyleSheet ,   I18nManager,
     Platform } from 'react-native';
 import { Searchbar, Text } from 'react-native-paper';
 
-export default function SearchBar() {
+export default function SearchBar({ value, onChange }) {
     const [searchQuery, setSearchQuery] = React.useState('');
 
     const onChangeSearch = query => setSearchQuery(query);
@@ -14,8 +14,8 @@ export default function SearchBar() {
         <View style={styles.container}>
             <Searchbar
                 placeholder="Search here..."
-                onChangeText={onChangeSearch}
-                value={searchQuery}
+                onChangeText={onChange}
+                value={value}
                 style={styles.searchbar}
             />
         </View>
