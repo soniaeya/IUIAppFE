@@ -2,7 +2,6 @@
 import * as React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Appbar, Card, Text, Button, Avatar, FAB } from 'react-native-paper';
-import MapScreen from './MapScreen';
 
 const LeftAvatar = props => <Avatar.Icon {...props} icon="star" />;
 
@@ -13,7 +12,7 @@ export default function HomeScreen({ navigation }) {
             <Appbar.Header>
                 <Appbar.Content title="Home" subtitle="Welcome back 👋" />
                 <Appbar.Action icon="magnify" onPress={() => {}} />
-                <Appbar.Action icon="cog" onPress={() => navigation?.navigate?.('Settings')} />
+                <Appbar.Action icon="cog" onPress={() => navigation?.navigate?.('MapScreen')} />
             </Appbar.Header>
 
             {/* Content */}
@@ -21,7 +20,7 @@ export default function HomeScreen({ navigation }) {
                 <Text variant="headlineMedium" style={styles.greeting}>
                     Hi Sonia,
                 </Text>
-                <MapScreen style={{ height: '100px'}}></MapScreen>
+
                 <Text variant="bodyMedium" style={styles.subtext}>
                     Here’s a quick overview of your app.
                 </Text>

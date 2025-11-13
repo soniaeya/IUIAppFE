@@ -28,9 +28,10 @@ export function TimePickerField() {
             <TextInput
                 label="Choose time"
                 value={formattedTime}
-                editable={false}
+                editable={true}
                 mode="outlined"
                 onPressIn={() => setShow(true)}
+                activeOutlineColor="purple"
                 right={
                     <TextInput.Icon
                         icon="clock-outline"

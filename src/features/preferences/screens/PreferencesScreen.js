@@ -4,10 +4,11 @@ import styled from 'styled-components/native';
 import { gs } from '../../../ui/theme/GlobalStyles';
 import { useNavigation } from '@react-navigation/native';
 import { Searchbar, Text } from 'react-native-paper';
+import MapScreen from './MapScreen';
+import MapComponent from '../components/MapComponent';
+import {TimePickerField} from '../components/TimePickerField';
 
-import TimePickerField from '../components/TimePickerField';
-
-import SearchExample from '../components/SearchExample';
+import SearchBar from '../components/SearchBar';
 
 const Container = styled(SafeAreaView)`
     flex: 1;
@@ -15,8 +16,13 @@ const Container = styled(SafeAreaView)`
     padding: 20px;
 `;
 
-const Section = styled.View`
+const ItemPreferenceDiv = styled.View`
     margin-bottom: 25px;
+`;
+
+
+const MainTitleDiv = styled.View`
+    padding: 30px;
 `;
 
 const Title = styled.Text`
@@ -70,81 +76,43 @@ export default function PreferencesScreen() {
 
 
     const handleSave = async () => {
-        try {
-            setIsSaving(true);
+        navigation.navigate(MapScreen);
 
-            const body = {
-                activity: activity,
-                time: time,
-                favorites: favorites,
-
-            };
-
-            const response = await fetch(`${BASE_URL}/preferences`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(body),
-            });
-
-            const data = await response.json();
-            console.log('Server response:', data);
-            if (response.ok) {
-                navigation.navigate('HomeScreen');
-            } else {
-                console.error('Server error:', data);
-            }
-
-
-        } catch (err) {
-            console.error('Error saving preferences:', err);
-        } finally {
-            setIsSaving(false);
-        }
     };
 
     return (
         <View style={gs.screen}>
-            <Section>
-                <Title>Search</Title>
-                <Title>1. Choose Activity</Title>
-                <OptionButton selected={activity === 'indoor'} onPress={() => setActivity('indoor')}>
-                    <OptionText>Indoor</OptionText>
+            <MainTitleDiv>
+                <Title style={{alignSelf: "center", fontSize: 25}}>Preference Selection</Title>
+            </MainTitleDiv>
+            <ItemPreferenceDiv>
+                <Title>Activity</Title>
+                <SearchBar ></SearchBar>
+            </ItemPreferenceDiv>
+            <ItemPreferenceDiv>
+
+                <Title>Environment</Title>
+                <OptionButton  selected={activity === 'indoor'} onPress={() => setActivity('indoor')}>
+                    <OptionText style={{color: '#FFFFFF'}}>Indoor</OptionText>
                 </OptionButton>
                 <OptionButton selected={activity === 'outdoor'} onPress={() => setActivity('outdoor')}>
-                    <OptionText>Outdoor</OptionText>
+                    <OptionText style={{color: '#FFFFFF'}}>Outdoor</OptionText>
                 </OptionButton>
-            </Section>
+            </ItemPreferenceDiv>
+            <ItemPreferenceDiv>
+                <Title>Preferred Time</Title>
+                <TimePickerField></TimePickerField>
 
-            <Section>
-                <Title>2. Preferred Time</Title>
-                <OptionButton selected={time === 'morning'} onPress={() => setTime('morning')}>
-                    <OptionText>Morning</OptionText>
-                </OptionButton>
-                <OptionButton selected={time === 'evening'} onPress={() => setTime('evening')}>
-                    <OptionText>Evening</OptionText>
-                </OptionButton>
+            </ItemPreferenceDiv>
 
-            </Section>
 
-            <Section>
-                <Title>3. Favorite Activity</Title>
-                <OptionButton selected={favorites === 'reading'} onPress={() => setFavorite('reading')}>
-                    <OptionText>Reading</OptionText>
-                </OptionButton>
-                <OptionButton selected={favorites === 'sports'} onPress={() => setFavorite('sports')}>
-                    <OptionText>Sports</OptionText>
-                </OptionButton>
-                <SearchExample></SearchExample>
-            </Section>
+            <ItemPreferenceDiv>
 
-            <Section><Save onPress={handleSave}></Save></Section>
+                <SaveButton onPress={handleSave}>
+                    <SaveText>Save</SaveText>
+                </SaveButton>
+
+              </ItemPreferenceDiv>
         </View>
     );
 }
-export const Save = ({onPress}) => (
-    <SaveButton onPress={onPress}>
-        <SaveText>Save</SaveText>
-    </SaveButton>
-);

@@ -5,7 +5,7 @@ import { View, StyleSheet ,   I18nManager,
     Platform } from 'react-native';
 import { Searchbar, Text } from 'react-native-paper';
 
-export default function SearchExample() {
+export default function SearchBar() {
     const [searchQuery, setSearchQuery] = React.useState('');
 
     const onChangeSearch = query => setSearchQuery(query);
@@ -28,7 +28,7 @@ const styles = StyleSheet.create({
         padding: 0
     },
     searchbar: {
-        marginTop: "10%"
+        marginTop: 0
     },
 
 });
