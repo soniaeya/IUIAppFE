@@ -7,7 +7,7 @@ import { Searchbar, Text } from 'react-native-paper';
 import MapScreen from './MapScreen';
 import MapComponent from '../components/MapComponent';
 import {TimePickerField} from '../components/TimePickerField';
-
+import loginScreen from "./LoginScreen";
 import SearchBar from '../components/SearchBar';
 
 const Container = styled(SafeAreaView)`
@@ -66,7 +66,7 @@ export default function PreferencesScreen() {
     const navigation = useNavigation();
     const [activity, setActivity] = React.useState('');
     const [env, setEnv] = React.useState('');
-    const [time, setTime] = React.useState('');
+    const [time, setTime] = React.useState(new Date());
     const [isSaving, setIsSaving] = useState(false);
 
     const BASE_URL =
@@ -107,7 +107,7 @@ export default function PreferencesScreen() {
             console.log('Preferences saved:', data);
 
             // ✅ Only navigate after successful save
-            navigation.navigate('MapScreen'); // use your route name string here
+            navigation.navigate('LoginScreen'); // use your route name string here
 
         } catch (err) {
             console.error('Error saving preferences:', err);
@@ -139,7 +139,7 @@ export default function PreferencesScreen() {
             </ItemPreferenceDiv>
             <ItemPreferenceDiv>
                 <Title>Preferred Time</Title>
-                <TimePickerField></TimePickerField>
+                <TimePickerField value={time} onChange={setTime} ></TimePickerField>
 
             </ItemPreferenceDiv>
 
