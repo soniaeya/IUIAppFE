@@ -20,6 +20,7 @@ const Container = styled(SafeAreaView)`
 
 const Inner = styled.View`
     flex: 1;
+    top: -30px;
     padding: 24px;
     justify-content: center;
 `;
@@ -31,16 +32,19 @@ const Header = styled.View`
 const Title = styled(Text)`
     font-size: 32px;
     font-weight: 800;
+    top: -10px;
     color: #5a2b67;
 `;
 
 const Subtitle = styled(Text)`
     margin-top: 8px;
     font-size: 16px;
+    top: -10px;
     color: #6f4b63;
 `;
 
 const Card = styled.View`
+    top: -10px;
     background-color: #ffffff;
     border-radius: 24px;
     padding: 24px;
@@ -48,6 +52,7 @@ const Card = styled.View`
     shadow-opacity: 0.1;
     shadow-radius: 12px;
     shadow-offset: 0px 4px;
+    height: 280px;
     elevation: 5;
 `;
 
@@ -125,7 +130,7 @@ export function LoginScreen({ navigation }) {
                     <Inner>
                         <Header>
                             <LogoBubble>
-                                <EmojiText>🌿</EmojiText>
+                                <EmojiText>🥋</EmojiText>
                             </LogoBubble>
                             <Title variant="headlineLarge">Welcome back</Title>
                             <Subtitle>Log in to find activities that match your mood.</Subtitle>
@@ -166,19 +171,13 @@ export function LoginScreen({ navigation }) {
                                 onPress={handleLogin}
                                 loading={loading}
                                 disabled={loading || !email || !password}
-                                style={{ borderRadius: 12, paddingVertical: 4 }}
+                                style={{ borderRadius: 12, paddingVertical: 4, bottom: -40}}
                                 buttonColor="#6f4b63"
                             >
                                 Log In
                             </Button>
 
-                            <Button
-                                mode="text"
-                                onPress={() => console.log('Forgot password pressed')}
-                                textColor="#6f4b63"
-                            >
-                                Forgot your password?
-                            </Button>
+
                         </Card>
 
                         <Footer>
@@ -187,7 +186,6 @@ export function LoginScreen({ navigation }) {
                                 <FooterLink onPress={() => navigation.navigate("SignupScreen")}>
                                     Sign up
                                 </FooterLink>
-
                             </FooterText>
                         </Footer>
                     </Inner>

@@ -63,7 +63,7 @@ const FooterText = styled(Text)`
 `;
 
 const FooterLink = styled(Text)`
-    color: #6f4b63;
+    color: #a8809b;
     font-weight: 700;
 `;
 
@@ -71,7 +71,7 @@ const LogoBubble = styled.View`
     width: 72px;
     height: 72px;
     border-radius: 36px;
-    background-color: #f2d8ff;
+    background-color: #e4d1eb;
     align-items: center;
     justify-content: center;
     margin-bottom: 16px;
@@ -135,8 +135,8 @@ export function SignupScreen({ navigation }) {
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                     <Inner>
                         <Header>
-                            <LogoBubble>
-                                <EmojiText>🌿</EmojiText>
+                            <LogoBubble buttonColor={"#6f4b63"}>
+                                <EmojiText>🥋</EmojiText>
                             </LogoBubble>
                             <Title variant="headlineLarge">Create account</Title>
                             <Subtitle>
