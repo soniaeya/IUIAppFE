@@ -5,12 +5,13 @@ import {
     StyleSheet, Text,
 
 } from 'react-native';
-import MapComponent from "../components/MapComponent";
-import UserPreferencePopup from "../components/UserPreferencePopup";
+import MapComponent from "./MapComponent";
+import UserPreferencePopup from "../../components/UserPreferencePopup";
 import {Button, DataTable, Dialog, List, Portal} from 'react-native-paper';
 import MaterialDesignIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import PreferencesScreen from "./PreferencesScreen";
+import PreferencesScreen from "../PreferenceScreen/PreferencesScreen";
 import {useNavigation} from "@react-navigation/native";
+import axios from "axios";
 
 
 export default function MapScreen() {
@@ -32,24 +33,14 @@ export default function MapScreen() {
 
 
 
+
+
     const handleNavigationToPreferencesScreen = async () => {
             navigation.navigate(PreferencesScreen);
 
         };
 
-    const mockDestinations = [
-        { id: '1', name: 'Paris', country: 'France' },
-        { id: '2', name: 'London', country: 'United Kingdom' },
-        { id: '3', name: 'Tokyo', country: 'Japan' },
-        { id: '4', name: 'New York', country: 'United States' },
-        { id: '5', name: 'Barcelona', country: 'Spain' },
-    ];
 
-    const filteredDestinations = searchQuery.length > 0
-        ? mockDestinations.filter(dest =>
-            dest.name.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        : [];
 
     return (
         <View style={styles.container}>

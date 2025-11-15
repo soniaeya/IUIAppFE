@@ -4,6 +4,7 @@ import { View, StyleSheet, PermissionsAndroid, Platform, ActivityIndicator, Text
 import MapView, { Marker } from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+import axios from "axios";
 
 
 export default function MapComponent() {
@@ -12,6 +13,13 @@ export default function MapComponent() {
     const [error, setError] = useState(null);
     const [selectedLocation, setSelectedLocation] = useState(null);
     const mapRef = useRef(null);
+
+    const [mapSearchQuery, setMapSearchQuery] = useState("");
+
+
+
+
+
 
     useEffect(() => {
         const requestLocationPermission = async () => {
@@ -63,24 +71,46 @@ export default function MapComponent() {
         requestLocationPermission();
     }, []);
 
+    const handleSearch = async () => {
+        try {
+            const response = await axios.put("http://10.0.2.2:8000/map/search", {
+                searchQuery: mapSearchQuery,  // 🔁 use same name as in MapSearch model
+            });
+            console.log("Server response:", response.data);
+        }
+
+        catch (error) {
+            if (error.response) {
+                console.log("STATUS:", error.response.status);
+                console.log("DATA:", error.response.data);
+            } else {
+                console.log("NETWORK ERROR:", error.message);
+                alert("Could not reach server");
+            }
+        }
+
+    }
+
     const handlePlaceSelect = (data, details) => {
         const { lat, lng } = details.geometry.location;
         const newLocation = {
             latitude: lat,
             longitude: lng,
         };
-        setSelectedLocation(newLocation);
 
-        // Animate map to the selected location
         if (mapRef.current) {
-            mapRef.current.animateToRegion({
-                latitude: lat,
-                longitude: lng,
-                latitudeDelta: 0.01,
-                longitudeDelta: 0.01,
-            }, 1000);
+            mapRef.current.animateToRegion(
+                {
+                    latitude: lat,
+                    longitude: lng,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
+                },
+                1000
+            );
         }
     };
+
 
     if (loading) {
         return (
@@ -102,19 +132,24 @@ export default function MapComponent() {
     return (
         <View style={styles.container}>
             <View style={styles.searchContainer}>
+
                 <GooglePlacesAutocomplete
                     placeholder='Search for a place...'
-                    onPress={handlePlaceSelect}
                     predefinedPlaces={[]}
                     query={{
                         key: 'AIzaSyDgne1zVrGt-GIf8s2ayoNs6kE3O4iVUXc',
                         language: 'en',
                     }}
                     fetchDetails={true}
+
                     textInputProps={{
-                        // at minimum avoid undefined
-                        onFocus: () => {},
-                        onBlur: () => {},
+                        value: mapSearchQuery,
+                        onChangeText: setMapSearchQuery,
+                        onSubmitEditing: (mapSearchQuery) => {
+                            handleSearch(mapSearchQuery)
+                            console.log("User typed:", mapSearchQuery);
+                        },
+
                     }}
                     styles={{
                         container: {

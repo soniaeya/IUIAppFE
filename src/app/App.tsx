@@ -4,9 +4,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import HomeScreen from '../features/preferences/screens/HomeScreen';
-import PreferencesScreen from '../features/preferences/screens/PreferencesScreen';
+import PreferencesScreen from '../features/preferences/screens/PreferenceScreen/PreferencesScreen';
 import DestinationsScreen from '../features/preferences/screens/DestinationsScreen';
-import MapScreen from '../features/preferences/screens/MapScreen';
+import MapScreen from '../features/preferences/screens/MapScreen/MapScreen';
 
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 

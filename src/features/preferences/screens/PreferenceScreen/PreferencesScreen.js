@@ -1,14 +1,14 @@
 import React, {useState} from 'react';
 import {Platform, SafeAreaView, View} from 'react-native';
 import styled from 'styled-components/native';
-import { gs } from '../../../ui/theme/GlobalStyles';
+import { gs } from '../../../../ui/theme/GlobalStyles';
 import { useNavigation } from '@react-navigation/native';
 import { Searchbar, Text } from 'react-native-paper';
-import MapScreen from './MapScreen';
-import MapComponent from '../components/MapComponent';
-import {TimePickerField} from '../components/TimePickerField';
-import loginScreen from "./LoginScreen";
-import SearchBar from '../components/SearchBar';
+import MapScreen from '../MapScreen/MapScreen';
+import MapComponent from '../MapScreen/MapComponent';
+import {TimePickerField} from './TimePickerField';
+import loginScreen from "../LoginScreen";
+import ActivitySearchBar from './ActivitySearchBar';
 
 const Container = styled(SafeAreaView)`
     flex: 1;
@@ -125,7 +125,7 @@ export default function PreferencesScreen() {
             </MainTitleDiv>
             <ItemPreferenceDiv>
                 <Title>Activity</Title>
-                <SearchBar value={activity} onChange={setActivity} ></SearchBar>
+                <ActivitySearchBar value={activity} onChange={setActivity} ></ActivitySearchBar>
             </ItemPreferenceDiv>
             <ItemPreferenceDiv>
 
