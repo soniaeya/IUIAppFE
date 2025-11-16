@@ -9,6 +9,7 @@ import MapComponent from '../MapScreen/MapComponent';
 import {TimePickerField} from './TimePickerField';
 import loginScreen from "../LoginScreen";
 import ActivitySearchBar from './ActivitySearchBar';
+import axios from "axios";
 
 const Container = styled(SafeAreaView)`
     flex: 1;
@@ -72,26 +73,14 @@ export default function PreferencesScreen() {
     const BASE_URL =
         Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
 
-
-
-    // ---- Send state to backend here ----
     const handleSave = async () => {
         try {
             setIsSaving(true);
 
-            const payload = {
+            const response = await axios.post(`${BASE_URL}/api/preferences/`, {
                 activity,
                 time,
                 env
-            };
-
-            const response = await fetch(`${BASE_URL}/api/preferences/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    // Add auth headers here if needed
-                },
-                body: JSON.stringify(payload),
             });
 
             if (!response.ok) {
@@ -106,8 +95,7 @@ export default function PreferencesScreen() {
             const data = await response.json();
             console.log('Preferences saved:', data);
 
-            // ✅ Only navigate after successful save
-            navigation.navigate('LoginScreen'); // use your route name string here
+            navigation.navigate('MapScreen');
 
         } catch (err) {
             console.error('Error saving preferences:', err);

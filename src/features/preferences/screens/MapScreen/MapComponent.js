@@ -98,6 +98,10 @@ export default function MapComponent() {
             longitude: lng,
         };
 
+        setSelectedLocation(newLocation);
+
+
+        console.log("Selected location:", newLocation);
         if (mapRef.current) {
             mapRef.current.animateToRegion(
                 {
@@ -141,12 +145,14 @@ export default function MapComponent() {
                         language: 'en',
                     }}
                     fetchDetails={true}
-
+                    onPress={(data, details) => handlePlaceSelect(data, details)}
                     textInputProps={{
                         value: mapSearchQuery,
                         onChangeText: setMapSearchQuery,
+
                         onSubmitEditing: (mapSearchQuery) => {
                             handleSearch(mapSearchQuery)
+
                             console.log("User typed:", mapSearchQuery);
                         },
 

@@ -112,7 +112,7 @@ export function SignupScreen({ navigation }) {
 
             console.log("Signup response:", response.data);
             alert("Account created! You can now log in.");
-            navigation?.navigate('LoginScreen');
+            navigation?.navigate('PreferencesScreen');
         } catch (error) {
             console.log("Signup error:", error?.response?.data || error.message);
 
