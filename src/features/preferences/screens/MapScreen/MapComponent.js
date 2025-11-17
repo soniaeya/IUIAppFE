@@ -74,7 +74,7 @@ export default function MapComponent() {
     const handleSearch = async () => {
         try {
             const response = await axios.put("http://10.0.2.2:8000/map/search", {
-                searchQuery: mapSearchQuery,  // 🔁 use same name as in MapSearch model
+                searchQuery: mapSearchQuery,
             });
             console.log("Server response:", response.data);
         }
@@ -92,6 +92,7 @@ export default function MapComponent() {
     }
 
     const handlePlaceSelect = (data, details) => {
+        console.log("Selected place:", details);
         const { lat, lng } = details.geometry.location;
         const newLocation = {
             latitude: lat,
@@ -138,41 +139,69 @@ export default function MapComponent() {
             <View style={styles.searchContainer}>
 
                 <GooglePlacesAutocomplete
-                    placeholder='Search for a place...'
-                    predefinedPlaces={[]}
+                    placeholder="Search for a place..."
+                    fetchDetails={true}
+                    onPress={(data, details) => handlePlaceSelect(data, details)}
+
                     query={{
                         key: 'AIzaSyDgne1zVrGt-GIf8s2ayoNs6kE3O4iVUXc',
                         language: 'en',
                     }}
-                    fetchDetails={true}
-                    onPress={(data, details) => handlePlaceSelect(data, details)}
+                    // --- IMPORTANT: explicitly set defaults the lib fails to set ---
+                    predefinedPlaces={[]}                 // <--- fixes the .filter error
+                    predefinedPlacesAlwaysVisible={false}
+                    autoFillOnNotFound={false}
+                    currentLocation={false}
+                    currentLocationLabel="Current location"
+                    nearbyPlacesAPI="GooglePlacesSearch"
+                    GooglePlacesSearchQuery={{ rankby: 'distance' }}
+                    GooglePlacesDetailsQuery={{}}
+                    GoogleReverseGeocodingQuery={{}}
+                    filterReverseGeocodingByTypes={[]}
+                    keepResultsAfterBlur={false}
+                    enablePoweredByContainer={true}
+                    enableHighAccuracyLocation={true}
+                    listUnderlayColor="#c8c7cc"
+                    keyboardShouldPersistTaps="always"
+                    minLength={1}
+                    timeout={20000}
+                    textInputHide={false}
+                    numberOfLines={1}
+                    suppressDefaultStyles={false}
+
+
                     textInputProps={{
                         value: mapSearchQuery,
                         onChangeText: setMapSearchQuery,
-
-                        onSubmitEditing: (mapSearchQuery) => {
-                            handleSearch(mapSearchQuery)
-
-                            console.log("User typed:", mapSearchQuery);
-                        },
-
+                        onSubmitEditing: () => {
+                            handleSearch();
+                        }
                     }}
+
+                    onFail={(error) => {
+                        console.log("GOOGLE PLACES ERROR:", error);
+                    }}
+
+                    onNotFound={() => console.log("NO RESULTS FOUND")}
+
                     styles={{
-                        container: {
-                            flex: 0,
-                        },
+                        container: { flex: 0 },
                         textInput: {
                             height: 44,
                             fontSize: 16,
                             borderWidth: 1,
-                            borderColor: '#ddd',
+                            borderColor: "#ddd",
                             borderRadius: 8,
                         },
                         listView: {
-                            backgroundColor: 'white',
-                        },
+                            backgroundColor: "white",
+                            zIndex: 10,
+                            elevation: 10,
+                        }
                     }}
                 />
+
+
             </View>
 
             {location ? (

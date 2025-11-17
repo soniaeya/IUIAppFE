@@ -83,27 +83,25 @@ export default function PreferencesScreen() {
                 env
             });
 
-            if (!response.ok) {
-                // backend returned 4xx/5xx
-                const errorText = await response.text();
-                console.log('Save failed:', errorText);
-                // Show a toast/snackbar here instead of alert if you prefer
-                alert('Failed to save preferences');
-                return;
-            }
-
-            const data = await response.json();
-            console.log('Preferences saved:', data);
+            // Axios does NOT use response.ok — errors already throw
+            console.log('Preferences saved:', response.data);
 
             navigation.navigate('MapScreen');
 
         } catch (err) {
-            console.error('Error saving preferences:', err);
-            alert('An error occurred while saving preferences');
+            // Axios error format
+            if (err.response) {
+                console.error("Server error:", err.response.data);
+                alert(`Failed: ${JSON.stringify(err.response.data)}`);
+            } else {
+                console.error("Network / other error:", err);
+                alert("Network error while saving preferences");
+            }
         } finally {
             setIsSaving(false);
         }
     };
+
 
 
     return (
