@@ -11,7 +11,7 @@ import {
 import styled from 'styled-components/native';
 import { TextInput, Button, Text } from 'react-native-paper';
 import {navigate} from "@react-navigation/routers/src/CommonActions";
-import SignupScreen from "./SignupScreen";
+import SignupScreen from "./SignupScreen/SignupScreen";
 
 const Container = styled(SafeAreaView)`
     flex: 1;

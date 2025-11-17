@@ -4,7 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import HomeScreen from '../features/preferences/screens/HomeScreen';
-import PreferencesScreen from '../features/preferences/screens/PreferenceScreen/PreferencesScreen';
+import SignupPreferencesScreen from '../features/preferences/screens/SignupScreen/SignupPreferencesScreen';
 import DestinationsScreen from '../features/preferences/screens/DestinationsScreen';
 import MapScreen from '../features/preferences/screens/MapScreen/MapScreen';
 
@@ -13,7 +13,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import 'react-native-get-random-values';
 import { AppRegistry } from 'react-native';
 import LoginScreen from "../features/preferences/screens/LoginScreen";
-import SignupScreen from "../features/preferences/screens/SignupScreen";
+import SignupScreen from "../features/preferences/screens/SignupScreen/SignupScreen";
 
 
 const Stack = createNativeStackNavigator();
@@ -24,9 +24,9 @@ export default function App() {
             icon: props => <MaterialCommunityIcons {...props} />,
         }}>
             <NavigationContainer>
-                <Stack.Navigator initialRouteName="PreferencesScreen" screenOptions={{ headerShown: false }}>
+                <Stack.Navigator initialRouteName="SignupPreferencesScreen" screenOptions={{ headerShown: false }}>
                     <Stack.Screen name="HomeScreen" component={HomeScreen} />
-                    <Stack.Screen name="PreferencesScreen" component={PreferencesScreen} />
+                    <Stack.Screen name="SignupPreferencesScreen" component={SignupPreferencesScreen} />
                     <Stack.Screen name="DestinationsScreen" component={DestinationsScreen} />
                     <Stack.Screen name="MapScreen" component={MapScreen} />
                     <Stack.Screen name="LoginScreen" component={LoginScreen} />

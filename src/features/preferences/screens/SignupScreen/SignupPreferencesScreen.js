@@ -6,9 +6,9 @@ import { useNavigation } from '@react-navigation/native';
 import { Searchbar, Text } from 'react-native-paper';
 import MapScreen from '../MapScreen/MapScreen';
 import MapComponent from '../MapScreen/MapComponent';
-import {TimePickerField} from './TimePickerField';
+import {TimePickerField} from '../PreferenceScreen/TimePickerField';
 import loginScreen from "../LoginScreen";
-import ActivitySearchBar from './ActivitySearchBar';
+import ActivitySearchBar from '../PreferenceScreen/ActivitySearchBar';
 import axios from "axios";
 
 const Container = styled(SafeAreaView)`
@@ -63,7 +63,7 @@ const SaveText = styled.Text`
 
 
 
-export default function PreferencesScreen() {
+export default function SignupPreferencesScreen() {
     const navigation = useNavigation();
     const [activity, setActivity] = React.useState('');
     const [env, setEnv] = React.useState('');

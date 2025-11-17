@@ -9,9 +9,11 @@ import MapComponent from "./MapComponent";
 import UserPreferencePopup from "../../components/UserPreferencePopup";
 import {Button, DataTable, Dialog, List, Portal} from 'react-native-paper';
 import MaterialDesignIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import PreferencesScreen from "../PreferenceScreen/PreferencesScreen";
+import SignupPreferencesScreen from "../SignupScreen/SignupPreferencesScreen";
 import {useNavigation} from "@react-navigation/native";
 import axios from "axios";
+
+
 
 
 export default function MapScreen() {
@@ -23,8 +25,11 @@ export default function MapScreen() {
     const [isUserRecommendationListPopupVisible, setIsUserRecommendationListPopupVisible] = useState(false);
 
 
-    const openUserPreferencesPopup = () => setIsUserPreferencesPopupVisible(true);
-    const openUserRecommendationListPopup = () => setIsUserRecommendationListPopupVisible(true);
+    const openUserPreferencesPopup = () => {
+
+        navigation.navigate("AccountScreen");
+    }
+
     const closeUserPreferencesPopup = () => setIsUserPreferencesPopupVisible(false);
     const closeUserRecommendationListPopup = () => setIsUserRecommendationListPopupVisible(false);
 
@@ -36,7 +41,7 @@ export default function MapScreen() {
 
 
     const handleNavigationToPreferencesScreen = async () => {
-            navigation.navigate(PreferencesScreen);
+            navigation.navigate(SignupPreferencesScreen);
 
         };
 
@@ -45,6 +50,8 @@ export default function MapScreen() {
     return (
         <View style={styles.container}>
             <MapComponent></MapComponent>
+
+
             <MaterialDesignIcons
 
                 name="logout"
@@ -52,22 +59,12 @@ export default function MapScreen() {
                 style={{
                     position: 'absolute',
                     right: '2%',
-                    bottom: '23%',
+                    bottom: '3%',
                 }}
                 onPress={handleNavigationToPreferencesScreen}
 
             />
-            <MaterialDesignIcons
 
-                name="format-list-bulleted"
-                size={40}
-                style={{
-                    position: 'absolute',
-                    right: '2%',
-                    bottom: '12%',
-                }}
-                onPress={openUserRecommendationListPopup}
-            />
             <MaterialDesignIcons
 
                 name="folder-heart"
@@ -75,79 +72,10 @@ export default function MapScreen() {
                 style={{
                     position: 'absolute',
                     right: '2%',
-                    bottom: '3%',
+                    bottom: '13%',
                 }}
                 onPress={openUserPreferencesPopup}
             />
-            <Portal>
-                <Dialog visible={isUserPreferencesPopupVisible} onDismiss={closeUserPreferencesPopup}>
-                    <Dialog.Title>User Preferences</Dialog.Title>
-                    <Dialog.Content>
-                        <Text>
-                            {"\n"}
-                            Time ⏱️: 6:30PM
-                            {"\n"}
-                            {"\n"}
-                            {"\n"}
-                            {"\n"}
-                            Activity 🥊: Boxing
-                            {"\n"}
-                            {"\n"}
-                            {"\n"}
-                            {"\n"}
-                            Environment 🌴: Indoors
-                            </Text>
-                    </Dialog.Content>
-                    <Dialog.Actions>
-                        <Button onPress={closeUserPreferencesPopup}>Close</Button>
-                    </Dialog.Actions>
-                </Dialog>
-            </Portal>
-
-            <Portal>
-                <Dialog visible={isUserRecommendationListPopupVisible} onDismiss={closeUserRecommendationListPopup}>
-                    <Dialog.Title>Recommendations to the User</Dialog.Title>
-
-                    <Dialog.Content>
-                        <DataTable>
-                            <DataTable.Header>
-                                <DataTable.Title>Activity</DataTable.Title>
-                                <DataTable.Title>Type</DataTable.Title>
-                                <DataTable.Title>Suggested Time</DataTable.Title>
-                            </DataTable.Header>
-
-                            <DataTable.Row>
-                                <DataTable.Cell>Visit Park</DataTable.Cell>
-                                <DataTable.Cell>Outdoor</DataTable.Cell>
-                                <DataTable.Cell>Morning</DataTable.Cell>
-                            </DataTable.Row>
-
-                            <DataTable.Row>
-                                <DataTable.Cell>Museum</DataTable.Cell>
-                                <DataTable.Cell>Indoor</DataTable.Cell>
-                                <DataTable.Cell>Afternoon</DataTable.Cell>
-                            </DataTable.Row>
-
-                            <DataTable.Row>
-                                <DataTable.Cell>Café Meetup</DataTable.Cell>
-                                <DataTable.Cell>Leisure</DataTable.Cell>
-                                <DataTable.Cell>Evening</DataTable.Cell>
-                            </DataTable.Row>
-
-                            <DataTable.Row>
-                                <DataTable.Cell>Yoga Class</DataTable.Cell>
-                                <DataTable.Cell>Indoor</DataTable.Cell>
-                                <DataTable.Cell>Morning</DataTable.Cell>
-                            </DataTable.Row>
-                        </DataTable>
-                    </Dialog.Content>
-                    <Dialog.Actions>
-                        <Button onPress={closeUserRecommendationListPopup}>Close</Button>
-                    </Dialog.Actions>
-                </Dialog>
-            </Portal>
-
-
         </View>
     );
 }

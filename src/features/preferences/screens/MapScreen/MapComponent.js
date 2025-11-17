@@ -1,11 +1,14 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import { View, StyleSheet, PermissionsAndroid, Platform, ActivityIndicator, Text } from 'react-native';
+import {View, StyleSheet, PermissionsAndroid, Platform, ActivityIndicator, Text, Image} from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import axios from "axios";
 
+import styled from 'styled-components/native';
+import {Title} from "react-native-paper";
+import MaterialDesignIcons from "react-native-vector-icons/MaterialCommunityIcons";
 
 export default function MapComponent() {
     const [location, setLocation] = useState(null);
@@ -90,8 +93,49 @@ export default function MapComponent() {
         }
 
     }
+    const photoRef = null;
+    const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference=${photoRef}&key=AIzaSyDgne1zVrGt-GIf8s2ayoNs6kE3O4iVUXc`;
+    const getShortAddress = (details) => {
+        const comps = details.address_components || [];
 
+        const streetNumber = comps.find(c => c.types.includes('street_number'))?.long_name || '';
+        const route        = comps.find(c => c.types.includes('route'))?.long_name || '';
+        const city         = comps.find(c => c.types.includes('locality'))?.long_name || '';
+
+        // "9 Rue Sainte-Catherine E, Montréal"
+        return `${streetNumber} ${route}`.trim().replace(/^, /, '');
+    };
     const handlePlaceSelect = (data, details) => {
+
+        const shortAddress = getShortAddress(details);
+
+        let photoUrl = null;
+        if (details.photos && details.photos.length > 0) {
+            const photoRef = details.photos[0].photo_reference;
+            photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference=${photoRef}&key=AIzaSyDgne1zVrGt-GIf8s2ayoNs6kE3O4iVUXc`;
+        }
+
+
+        // Postal code (H2X 1K4 → prefix H2X if you want)
+        const postalComp = details.address_components?.find(comp =>
+            comp.types.includes('postal_code')
+        );
+        const postalCode = postalComp?.long_name || '';
+
+        // Is it open now?
+        const isOpenNow = details.current_opening_hours?.open_now ?? false;
+
+        // Today’s hours (from weekday_text)
+        let todaysHours = '';
+        if (details.current_opening_hours?.weekday_text) {
+            const todayIndex = new Date().getDay(); // 0=Sun, 1=Mon, ...
+            // weekday_text starts Monday, so shift index:
+            const index = (todayIndex + 6) % 7;     // Mon->0, Tue->1, ..., Sun->6
+            todaysHours = details.current_opening_hours.weekday_text[index];
+            // e.g. "Monday: 11:30 AM – 1:30 PM, 4:00 – 8:00 PM"
+        }
+
+
         console.log("Selected place:", details);
         const { lat, lng } = details.geometry.location;
         const newLocation = {
@@ -99,7 +143,20 @@ export default function MapComponent() {
             longitude: lng,
         };
 
-        setSelectedLocation(newLocation);
+        setSelectedLocation({
+            latitude: lat,
+            longitude: lng,
+            photo: photoUrl,
+            name: details.name,                                   // "UNDERDOG BOXING GYM"
+            address: shortAddress,                 // full address
+            phone: details.formatted_phone_number,                // "(514) 843-5164"
+            website: details.website,                             // gym site
+            rating: details.rating,                               // 4.6
+            totalRatings: details.user_ratings_total,             // 70
+            isOpenNow,
+            todaysHours,
+            postalCode,
+        });
 
 
         console.log("Selected location:", newLocation);
@@ -204,6 +261,68 @@ export default function MapComponent() {
 
             </View>
 
+            {selectedLocation?.photo && (
+
+                <RecommendationContainer>
+                    <MaterialDesignIcons
+
+                        name="chevron-right"
+                        size={40}
+                        style={{
+                            position: 'absolute',
+                            right: 0,
+                            bottom: -75,
+                            zIndex: 999,
+                        }}
+                        onPress={{}}
+
+
+                    />
+                    <MaterialDesignIcons
+
+                        name="chevron-left"
+                        size={40}
+                        style={{
+                            position: 'absolute',
+                            left: 0,
+                            bottom: -75,
+                            zIndex: 999,
+                        }}
+                        onPress={{}}
+
+                    />
+                    <RecommendationInfoContainer>
+                        <GymTitle>
+                            {selectedLocation.name}
+                        </GymTitle>
+                        <StatsContainer>
+                            <StatsText>Your Rating</StatsText>:{'\n'}
+                            <StatsText>User Rating</StatsText>: {selectedLocation.rating} ★ ({selectedLocation.totalRatings}){'\n'}
+                                <StatsText>Opened</StatsText>: {selectedLocation.isOpenNow
+                                    ? <OpenText>Open</OpenText>
+                                    : <CloseText>Closed</CloseText>
+                        }
+                        {'\n'}
+                                    <StatsText>Address</StatsText>: {selectedLocation.address}
+                            {'\n'}
+                                        <StatsText>Tel</StatsText>: {selectedLocation.phone}
+
+                        </StatsContainer>
+
+
+                    </RecommendationInfoContainer>
+                    <ImageContainer>
+                        <Image
+                            source={{ uri: selectedLocation.photo }}
+                            style={{ width: '100%', height: 200, marginTop: 5, borderRadius: 20 }}
+                        />
+                    </ImageContainer>
+
+                </RecommendationContainer>
+
+            )}
+
+
             {location ? (
                 <MapView
                     ref={mapRef}
@@ -235,6 +354,80 @@ export default function MapComponent() {
         </View>
     );
 }
+
+const RecommendationContainer = styled.View`
+
+    top: 70px;
+    
+    height: 300px;
+    width: 100%;
+    background-color: #c8a2c8;
+`;
+
+
+const RecommendationInfoContainer = styled.View`
+    border-radius: 16px;
+    
+    margin: 10px;
+    z-index: 0;
+    height: 200px;
+    width: 40%;
+    background-color: #c8a2c8;
+`;
+
+const GymTitle = styled.Text`
+    font-family: 'Roboto-Bold';
+    font-weight: bold;
+
+    font-size: 15px;
+    padding: 10px;
+    padding-bottom: 0px;
+    line-height: 18px;
+
+`;
+
+const OpenText = styled.Text`
+    font-family: 'Roboto-Regular';
+    font-size: 12px;
+    padding: 10px;
+    line-height: 18px;
+    z-index: 999;
+    color: darkolivegreen;
+`;
+
+const CloseText = styled.Text`
+    font-family: 'Roboto-Regular';
+    font-size: 12px;
+    padding: 10px;
+    line-height: 18px;
+    z-index: 999;
+    color: darkred;
+`;
+const StatsText = styled.Text`
+    font-family: 'Roboto-Regular';
+    font-size: 13px;
+    font-weight: bold;
+`;
+
+const ImageContainer = styled.View`
+
+    padding: 10px;
+    position: absolute;
+    left: 45%;
+
+    height: 300px;
+    width: 55%;
+    background-color: #dbbdab;
+`;
+
+const StatsContainer = styled.Text`
+    font-family: 'Roboto-Regular';
+    font-size: 13px;
+    padding: 10px;
+    line-height: 18px;
+    z-index: 999;
+`;
+
 
 const styles = StyleSheet.create({
     container: {
