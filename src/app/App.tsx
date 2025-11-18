@@ -4,7 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import HomeScreen from '../features/preferences/screens/HomeScreen';
-import SignupPreferencesScreen from '../features/preferences/screens/SignupScreen/SignupPreferencesScreen';
+import UserPreferencesScreen from '../features/preferences/screens/SignupScreen/UserPreferencesScreen';
 import DestinationsScreen from '../features/preferences/screens/DestinationsScreen';
 import MapScreen from '../features/preferences/screens/MapScreen/MapScreen';
 
@@ -24,9 +24,9 @@ export default function App() {
             icon: props => <MaterialCommunityIcons {...props} />,
         }}>
             <NavigationContainer>
-                <Stack.Navigator initialRouteName="SignupPreferencesScreen" screenOptions={{ headerShown: false }}>
+                <Stack.Navigator initialRouteName="UserPreferencesScreen" screenOptions={{ headerShown: false }}>
                     <Stack.Screen name="HomeScreen" component={HomeScreen} />
-                    <Stack.Screen name="SignupPreferencesScreen" component={SignupPreferencesScreen} />
+                    <Stack.Screen name="UserPreferencesScreen" component={UserPreferencesScreen} />
                     <Stack.Screen name="DestinationsScreen" component={DestinationsScreen} />
                     <Stack.Screen name="MapScreen" component={MapScreen} />
                     <Stack.Screen name="LoginScreen" component={LoginScreen} />

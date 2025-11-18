@@ -6,10 +6,9 @@ import {
 
 } from 'react-native';
 import MapComponent from "./MapComponent";
-import UserPreferencePopup from "../../components/UserPreferencePopup";
 import {Button, DataTable, Dialog, List, Portal} from 'react-native-paper';
 import MaterialDesignIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import SignupPreferencesScreen from "../SignupScreen/SignupPreferencesScreen";
+import UserPreferencesScreen from "../SignupScreen/UserPreferencesScreen";
 import {useNavigation} from "@react-navigation/native";
 import axios from "axios";
 
@@ -21,17 +20,9 @@ export default function MapScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedDestination, setSelectedDestination] = useState(null);
 
-    const [isUserPreferencesPopupVisible, setIsUserPreferencesPopupVisible] = useState(false);
-    const [isUserRecommendationListPopupVisible, setIsUserRecommendationListPopupVisible] = useState(false);
 
 
-    const openUserPreferencesPopup = () => {
 
-        navigation.navigate("AccountScreen");
-    }
-
-    const closeUserPreferencesPopup = () => setIsUserPreferencesPopupVisible(false);
-    const closeUserRecommendationListPopup = () => setIsUserRecommendationListPopupVisible(false);
 
     const [returnTorPreferencesScreen] = useState(false);
     const [location, setLocation] = useState(null);
@@ -41,7 +32,7 @@ export default function MapScreen() {
 
 
     const handleNavigationToPreferencesScreen = async () => {
-            navigation.navigate(SignupPreferencesScreen);
+            navigation.navigate(UserPreferencesScreen);
 
         };
 
@@ -54,7 +45,7 @@ export default function MapScreen() {
 
             <MaterialDesignIcons
 
-                name="logout"
+                name="account-circle-outline"
                 size={40}
                 style={{
                     position: 'absolute',
@@ -65,17 +56,6 @@ export default function MapScreen() {
 
             />
 
-            <MaterialDesignIcons
-
-                name="folder-heart"
-                size={40}
-                style={{
-                    position: 'absolute',
-                    right: '2%',
-                    bottom: '13%',
-                }}
-                onPress={openUserPreferencesPopup}
-            />
         </View>
     );
 }

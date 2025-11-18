@@ -5,11 +5,11 @@ import { theme } from './theme';
 export const gs = StyleSheet.create({
     screen: {
         flex: 1,
-        backgroundColor: "#f5e3ce",
+        backgroundColor: "#dbbdab",
         padding: theme.spacing.lg,
     },
     card: {
-        backgroundColor: "#f5e3ce",
+        backgroundColor: "#dbbdab",
         borderRadius: theme.radius.lg,
         padding: theme.spacing.lg,
         borderWidth: StyleSheet.hairlineWidth,

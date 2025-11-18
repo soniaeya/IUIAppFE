@@ -5,6 +5,7 @@ import MapView, { Marker } from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import axios from "axios";
+import RecommendationBox from "./RecommendationBox";
 
 import styled from 'styled-components/native';
 import {Title} from "react-native-paper";
@@ -261,66 +262,7 @@ export default function MapComponent() {
 
             </View>
 
-            {selectedLocation?.photo && (
-
-                <RecommendationContainer>
-                    <MaterialDesignIcons
-
-                        name="chevron-right"
-                        size={40}
-                        style={{
-                            position: 'absolute',
-                            right: 0,
-                            bottom: -75,
-                            zIndex: 999,
-                        }}
-                        onPress={{}}
-
-
-                    />
-                    <MaterialDesignIcons
-
-                        name="chevron-left"
-                        size={40}
-                        style={{
-                            position: 'absolute',
-                            left: 0,
-                            bottom: -75,
-                            zIndex: 999,
-                        }}
-                        onPress={{}}
-
-                    />
-                    <RecommendationInfoContainer>
-                        <GymTitle>
-                            {selectedLocation.name}
-                        </GymTitle>
-                        <StatsContainer>
-                            <StatsText>Your Rating</StatsText>:{'\n'}
-                            <StatsText>User Rating</StatsText>: {selectedLocation.rating} ★ ({selectedLocation.totalRatings}){'\n'}
-                                <StatsText>Opened</StatsText>: {selectedLocation.isOpenNow
-                                    ? <OpenText>Open</OpenText>
-                                    : <CloseText>Closed</CloseText>
-                        }
-                        {'\n'}
-                                    <StatsText>Address</StatsText>: {selectedLocation.address}
-                            {'\n'}
-                                        <StatsText>Tel</StatsText>: {selectedLocation.phone}
-
-                        </StatsContainer>
-
-
-                    </RecommendationInfoContainer>
-                    <ImageContainer>
-                        <Image
-                            source={{ uri: selectedLocation.photo }}
-                            style={{ width: '100%', height: 200, marginTop: 5, borderRadius: 20 }}
-                        />
-                    </ImageContainer>
-
-                </RecommendationContainer>
-
-            )}
+            {selectedLocation?.photo && <RecommendationBox selectedLocation={selectedLocation}></RecommendationBox>}
 
 
             {location ? (
@@ -355,78 +297,6 @@ export default function MapComponent() {
     );
 }
 
-const RecommendationContainer = styled.View`
-
-    top: 70px;
-    
-    height: 300px;
-    width: 100%;
-    background-color: #c8a2c8;
-`;
-
-
-const RecommendationInfoContainer = styled.View`
-    border-radius: 16px;
-    
-    margin: 10px;
-    z-index: 0;
-    height: 200px;
-    width: 40%;
-    background-color: #c8a2c8;
-`;
-
-const GymTitle = styled.Text`
-    font-family: 'Roboto-Bold';
-    font-weight: bold;
-
-    font-size: 15px;
-    padding: 10px;
-    padding-bottom: 0px;
-    line-height: 18px;
-
-`;
-
-const OpenText = styled.Text`
-    font-family: 'Roboto-Regular';
-    font-size: 12px;
-    padding: 10px;
-    line-height: 18px;
-    z-index: 999;
-    color: darkolivegreen;
-`;
-
-const CloseText = styled.Text`
-    font-family: 'Roboto-Regular';
-    font-size: 12px;
-    padding: 10px;
-    line-height: 18px;
-    z-index: 999;
-    color: darkred;
-`;
-const StatsText = styled.Text`
-    font-family: 'Roboto-Regular';
-    font-size: 13px;
-    font-weight: bold;
-`;
-
-const ImageContainer = styled.View`
-
-    padding: 10px;
-    position: absolute;
-    left: 45%;
-
-    height: 300px;
-    width: 55%;
-    background-color: #dbbdab;
-`;
-
-const StatsContainer = styled.Text`
-    font-family: 'Roboto-Regular';
-    font-size: 13px;
-    padding: 10px;
-    line-height: 18px;
-    z-index: 999;
-`;
 
 
 const styles = StyleSheet.create({
