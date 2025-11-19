@@ -6,7 +6,6 @@ import styled from "styled-components/native";
 import MaterialIcons from "react-native-vector-icons/MaterialCommunityIcons";
 
 export const TouchInput = styled.TouchableOpacity`
-    background-color: floralwhite;
     border-width: 2px;             /* ← thick border */
     border-color: #a8809b;
     border-radius: 14px;

@@ -2,16 +2,14 @@ import styled from "styled-components/native";
 import React from "react";
 import {Switch, Text} from "react-native";
 const highlight = "#6f4b63"
-const dark_background = "#b0928f"
-
+const light_purple = "#a8809b";
 const Tile = styled.View`
     width: 32.5%;               /* ensures 3 per row */
 
     height: 80px;
-    background-color: floralwhite;
     border-radius: 16px;
-    border-width: 1.5px;
-    border-color: ${highlight};
+    border-width: 2px;
+    border-color: ${light_purple};
     padding-left:5px;
     padding-right:10px;
     margin-bottom: 7px;

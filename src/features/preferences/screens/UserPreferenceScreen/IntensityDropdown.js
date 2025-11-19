@@ -16,7 +16,6 @@ const Label = styled.Text`
 `;
 
 const Selector = styled.TouchableOpacity`
-  background-color: floralwhite;
   border-width: 2px;
   border-color: #a8809b;
   border-radius: 14px;
@@ -34,7 +33,6 @@ const SelectorText = styled.Text`
 
 const DropdownBox = styled.View`
   margin-top: 6px;
-  background-color: floralwhite;
   border-radius: 14px;
   border-width: 1.5px;
   border-color: #a8809b;

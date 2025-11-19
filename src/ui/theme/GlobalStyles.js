@@ -1,11 +1,11 @@
 // src/GlobalStyles.js
-import { StyleSheet } from 'react-native';
+import {StyleSheet, TouchableOpacity} from 'react-native';
 import { theme } from './theme';
 
 export const gs = StyleSheet.create({
     screen: {
         flex: 1,
-        backgroundColor: "#dbbdab",
+        backgroundColor: "white",
         padding: theme.spacing.lg,
     },
     card: {
@@ -15,6 +15,10 @@ export const gs = StyleSheet.create({
         borderWidth: StyleSheet.hairlineWidth,
         borderColor: theme.palette.border,
     },
+
+    TouchableOpacity:{  backgroundColor: "white", borderColor: "#a8809b"},
+    view: { flexDirection: 'row', justifyContent: 'space-between' },
+
     row: { flexDirection: 'row', alignItems: 'center' },
     center: { justifyContent: 'center', alignItems: 'center' },
 

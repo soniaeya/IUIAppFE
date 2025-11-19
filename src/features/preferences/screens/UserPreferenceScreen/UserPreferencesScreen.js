@@ -16,7 +16,8 @@ import IntensityDropdown from "./IntensityDropdown";
 
 const highlight = "#6f4b63"
 const dark_background = "#b0928f"
-
+const background_color= "white"
+const light_purple = "#a8809b";
 
 
 const ItemPreferenceDiv = styled.View`
@@ -72,7 +73,7 @@ const GridContainer = styled.View`
     padding-left: 5px;
     padding-right: 5px;
 
-    background-color: #dbbdab;
+
     border-radius: 20px;
 
 
@@ -172,7 +173,7 @@ export default function UserPreferencesScreen() {
                 showsVerticalScrollIndicator={false}
             >
             <MainTitleDiv>
-                <Title style={{alignSelf: "center", fontSize: 25, fontWeight: "bold", borderWidth: 2, borderColor: highlight, paddingVertical: 9, borderRadius: 6, marginBottom: 0, paddingHorizontal: 30}}>Preference Selection</Title>
+                <Title style={{ alignSelf: "center", fontSize: 25, fontWeight: "bold",  paddingVertical: 9,  marginBottom: 0, paddingHorizontal: 30}}>Preference Selection</Title>
             </MainTitleDiv>
                 <ItemPreferenceLine style={{marginTop: -5}}></ItemPreferenceLine>
             <ItemPreferenceDiv>

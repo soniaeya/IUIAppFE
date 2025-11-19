@@ -245,16 +245,17 @@ export default function MapComponent() {
                     styles={{
                         container: { flex: 0 },
                         textInput: {
-                            height: 44,
+                            height: 48,
                             fontSize: 16,
-                            borderWidth: 1,
-                            borderColor: "#ddd",
-                            borderRadius: 8,
+                            borderRadius: 16,
+                            paddingBottom: 0
+
                         },
                         listView: {
                             backgroundColor: "white",
                             zIndex: 10,
                             elevation: 10,
+                            borderRadius: 16,
                         }
                     }}
                 />
@@ -305,17 +306,18 @@ const styles = StyleSheet.create({
     },
     searchContainer: {
         position: 'absolute',
-        top: 10,
+        top: 15,
         left: 10,
         right: 10,
         zIndex: 1,
         backgroundColor: 'white',
-        borderRadius: 8,
+        borderRadius: 16,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
         elevation: 5,
+
     },
     map: {
         flex: 1
