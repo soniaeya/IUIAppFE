@@ -20,7 +20,7 @@ import {Image} from "react-native";
 import React from "react";
 
 const background_color = "#dbbdab";
-
+const highlight = "#6f4b63"
 export default function RecommendationBox({selectedLocation}) {
     return <RecommendationContainer>
         <MaterialDesignIcons
@@ -85,10 +85,12 @@ export default function RecommendationBox({selectedLocation}) {
 const RecommendationContainer = styled.View`
 
     top: 70px;
-
+    border-radius: 16px;
     height: 300px;
     width: 100%;
-    background-color: #c8a2c8;
+    background-color: ${
+    highlight
+};
 `;
 
 
@@ -99,7 +101,7 @@ const RecommendationInfoContainer = styled.View`
     z-index: 0;
     height: 200px;
     width: 40%;
-    background-color: #c8a2c8;
+    background-color: floralwhite;
 `;
 
 const GymTitle = styled.Text`

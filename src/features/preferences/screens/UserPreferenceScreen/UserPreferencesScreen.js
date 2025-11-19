@@ -6,23 +6,30 @@ import {useNavigation} from '@react-navigation/native';
 import {Searchbar, Text} from 'react-native-paper';
 import MapScreen from '../MapScreen/MapScreen';
 import MapComponent from '../MapScreen/MapComponent';
-import {TimePickerField} from '../PreferenceScreen/TimePickerField';
+import {TimePickerField} from './TimePickerField';
 import loginScreen from "../LoginScreen";
-import ActivitySearchBar from '../PreferenceScreen/ActivitySearchBar';
 import axios from "axios";
 import ActivityToggleButton from "./ActivityToggleButton";
 import { ScrollView } from "react-native";
+import IndoorOutdoorDropdown from "./IndoorOutdoorDropdown";
+import IntensityDropdown from "./IntensityDropdown";
 
-const highlight = "#a8809b"
+const highlight = "#6f4b63"
+const dark_background = "#b0928f"
 
-const Container = styled(SafeAreaView)`
-    flex: 1;
-    background-color: #dbbdab;
-    padding: 20px;
-`;
+
 
 const ItemPreferenceDiv = styled.View`
+    margin-top: 0px;
     margin-bottom: 25px;
+`;
+
+const ItemPreferenceLine = styled.View`
+    height: 1px;
+    margin-bottom: 25px;
+    width: 100%;
+    border-bottom-width: 1px;
+    border-bottom-color: ${highlight};
 `;
 
 
@@ -33,22 +40,10 @@ const MainTitleDiv = styled.View`
 const Title = styled.Text`
     font-size: 20px;
     font-weight: 700;
-    color: #82377b;
+    color: ${highlight};
     margin-bottom: 10px;
 `;
 
-const OptionButton = styled.TouchableOpacity`
-    background-color: ${(props) => (props.selected ? highlight : '#e9d8f2')};
-    padding: 15px;
-    border-radius: 12px;
-    margin-vertical: 6px;
-    align-items: center;
-`;
-
-const OptionText = styled.Text`
-    color: #333;
-    font-size: 16px;
-`;
 
 
 const SaveButton = styled.TouchableOpacity`
@@ -72,17 +67,18 @@ const GridContainer = styled.View`
     justify-content: space-between;
     align-items: center;
 
-    padding: 16px;
-    margin-top: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
 
-    border-width: 2px;
-    border-color: #a8809b;
+    background-color: #dbbdab;
     border-radius: 20px;
 
-    background-color: #eacbb3;
 
 `;
 
+/* highlight dark purple #ad959b*/
 
 
 
@@ -92,6 +88,7 @@ export default function UserPreferencesScreen() {
     const [env, setEnv] = React.useState('');
     const [time, setTime] = React.useState(new Date());
     const [isSaving, setIsSaving] = useState(false);
+    const [intensity, setIntensity] = useState(null);
 
 
     const BASE_URL =
@@ -126,42 +123,44 @@ export default function UserPreferencesScreen() {
     };
 
     const [activities, setActivities] = useState({
-        mma: false,
+        boxing: false,
+        kb: false,
         tkd: false,
         bjj: false,
-        kb: false,
-        judo: false,
-        aikido: false,
+        karate: false,
         muaythai: false,
-        taichi: false,
-        karate: false
     });
 
     function formatActivityLabel(key) {
         let label;
 
         switch (key) {
+            case "boxing":
+                label = "Boxing🥊";
+                break;
+
             case "muaythai":
-                label = "Muay Thai";
+                label = "Muay Thai 🇹🇭";
                 break;
 
-            case "taichi":
-                label = "Tai Chi";
-                break;
-
-            case "mma":
-            case "bjj":
             case "tkd":
-            case "kb":
-                label = key.toUpperCase();
+                label = "TKD 🇰🇷"
+                break;
+            case "bjj":
+                label = key.toUpperCase() + "      🇧🇷";
                 break;
 
-            default:
-                label = key.charAt(0).toUpperCase() + key.slice(1);
+            case "kb":
+                label = "Savate 🇫🇷";
                 break;
+
+            case "karate":
+                label = "Karate 🥋";
+                break;
+
+
         }
 
-        // Always 9 characters (add spaces if shorter)
         return label;
     }
 
@@ -173,8 +172,9 @@ export default function UserPreferencesScreen() {
                 showsVerticalScrollIndicator={false}
             >
             <MainTitleDiv>
-                <Title style={{alignSelf: "center", fontSize: 25}}>Preference Selection</Title>
+                <Title style={{alignSelf: "center", fontSize: 25, fontWeight: "bold", borderWidth: 2, borderColor: highlight, paddingVertical: 9, borderRadius: 6, marginBottom: 0, paddingHorizontal: 30}}>Preference Selection</Title>
             </MainTitleDiv>
+                <ItemPreferenceLine style={{marginTop: -5}}></ItemPreferenceLine>
             <ItemPreferenceDiv>
                 <Title>Activity</Title>
 
@@ -192,22 +192,26 @@ export default function UserPreferencesScreen() {
                 </GridContainer>
             </ItemPreferenceDiv>
             <ItemPreferenceDiv>
-
+                <ItemPreferenceLine></ItemPreferenceLine>
                 <Title>Environment</Title>
-                <OptionButton selected={env === 'indoor'} onPress={() => setEnv('indoor')}>
-                    <OptionText style={{color: '#FFFFFF'}}>Indoor</OptionText>
-                </OptionButton>
-                <OptionButton selected={env === 'outdoor'} onPress={() => setEnv('outdoor')}>
-                    <OptionText style={{color: '#FFFFFF'}}>Outdoor</OptionText>
-                </OptionButton>
+                <IndoorOutdoorDropdown value={env} onChange={setEnv} />
+
             </ItemPreferenceDiv>
-            <ItemPreferenceDiv>
+                <ItemPreferenceLine></ItemPreferenceLine>
+                <ItemPreferenceDiv>
+
+                    <Title>Intensity</Title>
+                    <IntensityDropdown value={intensity} onChange={setIntensity} />
+                </ItemPreferenceDiv>
+                <ItemPreferenceLine></ItemPreferenceLine>
+
+                <ItemPreferenceDiv>
                 <Title>Preferred Time</Title>
                 <TimePickerField value={time} onChange={setTime}></TimePickerField>
 
             </ItemPreferenceDiv>
 
-
+                <ItemPreferenceLine></ItemPreferenceLine>
             <ItemPreferenceDiv>
 
                 <SaveButton onPress={handleSave}>

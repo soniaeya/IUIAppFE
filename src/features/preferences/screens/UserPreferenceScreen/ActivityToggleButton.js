@@ -1,20 +1,20 @@
 import styled from "styled-components/native";
 import React from "react";
 import {Switch, Text} from "react-native";
-
+const highlight = "#6f4b63"
+const dark_background = "#b0928f"
 
 const Tile = styled.View`
-    width: 32%;               /* ensures 3 per row */
-    aspect-ratio: 1;          /* makes them perfect squares */
+    width: 32.5%;               /* ensures 3 per row */
 
-    height: 10px;
-    background-color: #f6e4d3;
-    border-radius: 18px;
+    height: 80px;
+    background-color: floralwhite;
+    border-radius: 16px;
     border-width: 1.5px;
-    border-color: #a8809b;
-
-    padding:8px;
-    margin-bottom: 12px;
+    border-color: ${highlight};
+    padding-left:5px;
+    padding-right:10px;
+    margin-bottom: 7px;
 
     justify-content: center;  /* vertically center content */
 `;
@@ -24,24 +24,24 @@ const TileRow = styled.View`
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    width: 107%;
+    width: 105%;
 `;
 
 
 const TileLabel = styled.Text`
     font-size: 16px;
     font-weight: 700;
-    color: #000;
+    color: ${highlight};
 `;
 
 export const ThemedSwitch = styled(Switch).attrs(({ value }) => ({
     trackColor: { false: "#d6bdd5", true: "#a8809b" },
-    thumbColor: value ? "#82377b" : "#f4f3f4",
+    thumbColor: value ? highlight : "#f4f3f4",
     ios_backgroundColor: "#d6bdd5",
 }))`
   transform: scaleX(1.1) scaleY(1.1);
   position: relative;
-    right: -9;
+    right: 4;
 `;
 
 

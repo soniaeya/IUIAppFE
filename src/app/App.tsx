@@ -4,7 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import HomeScreen from '../features/preferences/screens/HomeScreen';
-import UserPreferencesScreen from '../features/preferences/screens/SignupScreen/UserPreferencesScreen';
+import UserPreferencesScreen from '../features/preferences/screens/UserPreferenceScreen/UserPreferencesScreen';
 import DestinationsScreen from '../features/preferences/screens/DestinationsScreen';
 import MapScreen from '../features/preferences/screens/MapScreen/MapScreen';
 

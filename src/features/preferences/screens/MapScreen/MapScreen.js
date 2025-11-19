@@ -8,12 +8,12 @@ import {
 import MapComponent from "./MapComponent";
 import {Button, DataTable, Dialog, List, Portal} from 'react-native-paper';
 import MaterialDesignIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import UserPreferencesScreen from "../SignupScreen/UserPreferencesScreen";
+import UserPreferencesScreen from "../UserPreferenceScreen/UserPreferencesScreen";
 import {useNavigation} from "@react-navigation/native";
 import axios from "axios";
 
 
-
+const highlight = "#6f4b63"
 
 export default function MapScreen() {
     const navigation = useNavigation();
@@ -46,7 +46,8 @@ export default function MapScreen() {
             <MaterialDesignIcons
 
                 name="account-circle-outline"
-                size={40}
+                color={highlight}
+                size={60}
                 style={{
                     position: 'absolute',
                     right: '2%',
