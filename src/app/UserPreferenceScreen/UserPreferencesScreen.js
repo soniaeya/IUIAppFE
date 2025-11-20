@@ -133,6 +133,11 @@ export default function UserPreferencesScreen() {
     const [intensity, setIntensity] = useState(null);
     const [activityConfig, setActivityConfig] = useState(ACTIVITY_CONFIG);
     const [activity, setActivity] = useState("");
+// Return a list of selected activity types, e.g. ["Boxing", "Parks"]
+    const getSelectedActivities = () =>
+        Object.values(activityConfig)
+            .filter(cfg => cfg.active)
+            .map(cfg => cfg.type);
 
     const BASE_URL =
         Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
@@ -140,20 +145,23 @@ export default function UserPreferencesScreen() {
     const handleSave = async () => {
         try {
             setIsSaving(true);
-            const response = await axios.post(`${BASE_URL}/api/preferences/`, {
-                activity,
-                time,
-                env
-            });
 
-            console.log("Saving preferences:", {activity, time, env});
+            const selectedActivities = getSelectedActivities();
 
+            const payload = {
+                activity,                 // main chosen activity type (e.g. "Boxing")
+                activities: selectedActivities,   // all toggled types
+                env,
+                intensity,                // can be null if not chosen
+                time: time.toISOString(), // send ISO string to FastAPI
+            };
+
+            console.log("Saving preferences payload:", payload);
+
+            const response = await axios.post(`${BASE_URL}/api/preferences/`, payload);
 
             navigation.navigate('MapScreen');
-
-
         } catch (err) {
-            // Axios error format
             if (err.response) {
                 console.error("Server error:", err.response.data);
                 alert(`Failed: ${JSON.stringify(err.response.data)}`);
@@ -165,6 +173,7 @@ export default function UserPreferencesScreen() {
             setIsSaving(false);
         }
     };
+
 
 
     function formatActivityLabel(key) {
