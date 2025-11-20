@@ -127,10 +127,10 @@ export default function UserPreferencesScreen() {
     const [activities, setActivities] = useState({
         boxing: false,
         kb: false,
+        muaythai: false,
         tkd: false,
         bjj: false,
         karate: false,
-        muaythai: false,
     });
 
     function formatActivityLabel(key) {
