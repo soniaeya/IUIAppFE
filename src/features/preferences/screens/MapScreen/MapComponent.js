@@ -1,29 +1,129 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import {View, StyleSheet, PermissionsAndroid, Platform, ActivityIndicator, Text, Image} from 'react-native';
+import {View, StyleSheet, PermissionsAndroid, Platform, ActivityIndicator, Text} from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import axios from "axios";
 import RecommendationBox from "./RecommendationBox";
 
-import styled from 'styled-components/native';
-import {Title} from "react-native-paper";
-import MaterialDesignIcons from "react-native-vector-icons/MaterialCommunityIcons";
 
 export default function MapComponent() {
     const [location, setLocation] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [selectedLocation, setSelectedLocation] = useState(null);
     const mapRef = useRef(null);
-
+    const searchRef = useRef(null);
     const [mapSearchQuery, setMapSearchQuery] = useState("");
 
 
+    const [selectedLocation, setSelectedLocation] = useState(null);
+    const [currentGymIndex, setCurrentGymIndex] = useState(0);
+    const gyms = ["Underdog Montreal", "Hard Knox Montreal", "Concordia University"];
+
+    const writeToSearchBar = (nextName) => {
+        if (!searchRef.current) return;          // ref not ready yet
+
+        // Set the visible text in the search bar
+        searchRef.current.setAddressText(nextName);
+
+        // Trigger autocomplete search (only if method exists)
+        if (searchRef.current._handleChangeText) {
+            searchRef.current._handleChangeText(nextName);
+        }
+        return nextName;
+    }
+    const GOOGLE_API_KEY = "AIzaSyDgne1zVrGt-GIf8s2ayoNs6kE3O4iVUXc"; // or reuse the same you already use
+
+// This mimics "select the first autocomplete result for this text"
+    const selectFirstPlaceForText = async (text) => {
+        if (!text || !text.trim()) return;
+
+        try {
+            // 1) Find a place from text (like the first autocomplete result)
+            const findResp = await axios.get(
+                "https://maps.googleapis.com/maps/api/place/findplacefromtext/json",
+                {
+                    params: {
+                        input: text,
+                        inputtype: "textquery",
+                        fields: "place_id,name,geometry,formatted_address,photos,opening_hours",
+                        key: "AIzaSyDgne1zVrGt-GIf8s2ayoNs6kE3O4iVUXc",
+                    },
+                }
+            );
+
+            const candidates = findResp.data.candidates || [];
+            if (candidates.length === 0) {
+                console.log("No candidates for text:", text);
+                return;
+            }
+
+            const first = candidates[0];
+
+            // 2) (Optional but nicer) get full details using place_id
+            const detailsResp = await axios.get(
+                "https://maps.googleapis.com/maps/api/place/details/json",
+                {
+                    params: {
+                        place_id: first.place_id,
+                        key: "AIzaSyDgne1zVrGt-GIf8s2ayoNs6kE3O4iVUXc",
+                        fields:
+                            "name,geometry,formatted_address,photos," +
+                            "formatted_phone_number,website,rating,user_ratings_total," +
+                            "opening_hours,address_components",
+                    },
+                }
+            );
+
+            const details = detailsResp.data.result;
+            if (!details) return;
+
+            // 3) Reuse your existing logic that runs when user taps a result
+            //    (if you want, you can pull the useful parts out of handlePlaceSelect
+            //     into a separate function and call it here)
+            handlePlaceSelect({ description: text }, details);
+        } catch (err) {
+            console.log("Error selecting first place:", err.message);
+        }
+    };
 
 
+    const handleNextRecommendation = async () => {
+        const nextIndex = (currentGymIndex + 1) % gyms.length;
+        const nextName = gyms[nextIndex];
 
+        setCurrentGymIndex(nextIndex);
+
+        // optional: keep your visual search bar in sync
+        if (searchRef.current) {
+            searchRef.current.setAddressText(nextName);
+        }
+
+        // 🔥 This line effectively "selects the first option"
+        await selectFirstPlaceForText(nextName);
+
+        return nextName;
+    };
+
+
+    const handlePrevRecommendation = async () => {
+        const prevIndex =
+            (currentGymIndex - 1 + gyms.length) % gyms.length;
+        const prevName = gyms[prevIndex];
+
+        setCurrentGymIndex(prevIndex);
+
+        // Update visible search bar
+        if (searchRef.current) {
+            searchRef.current.setAddressText(prevName);
+        }
+
+        // Auto-select first result
+        await selectFirstPlaceForText(prevName);
+
+        return prevName;
+    };
 
     useEffect(() => {
         const requestLocationPermission = async () => {
@@ -81,9 +181,7 @@ export default function MapComponent() {
                 searchQuery: mapSearchQuery,
             });
             console.log("Server response:", response.data);
-        }
-
-        catch (error) {
+        } catch (error) {
             if (error.response) {
                 console.log("STATUS:", error.response.status);
                 console.log("DATA:", error.response.data);
@@ -94,16 +192,14 @@ export default function MapComponent() {
         }
 
     }
-    const photoRef = null;
-    const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference=${photoRef}&key=AIzaSyDgne1zVrGt-GIf8s2ayoNs6kE3O4iVUXc`;
-    const getShortAddress = (details) => {
+
+
+   const getShortAddress = (details) => {
         const comps = details.address_components || [];
 
         const streetNumber = comps.find(c => c.types.includes('street_number'))?.long_name || '';
         const route        = comps.find(c => c.types.includes('route'))?.long_name || '';
-        const city         = comps.find(c => c.types.includes('locality'))?.long_name || '';
 
-        // "9 Rue Sainte-Catherine E, Montréal"
         return `${streetNumber} ${route}`.trim().replace(/^, /, '');
     };
     const handlePlaceSelect = (data, details) => {
@@ -197,6 +293,7 @@ export default function MapComponent() {
             <View style={styles.searchContainer}>
 
                 <GooglePlacesAutocomplete
+                    ref={searchRef}
                     placeholder="Search for a place..."
                     fetchDetails={true}
                     onPress={(data, details) => handlePlaceSelect(data, details)}
@@ -231,9 +328,7 @@ export default function MapComponent() {
                     textInputProps={{
                         value: mapSearchQuery,
                         onChangeText: setMapSearchQuery,
-                        onSubmitEditing: () => {
-                            handleSearch();
-                        }
+
                     }}
 
                     onFail={(error) => {
@@ -263,7 +358,12 @@ export default function MapComponent() {
 
             </View>
 
-            {selectedLocation?.photo && <RecommendationBox selectedLocation={selectedLocation}></RecommendationBox>}
+            {selectedLocation?.photo && <RecommendationBox
+                selectedLocation={selectedLocation}
+                onNextRecommendation={handleNextRecommendation}
+                onPrevRecommendation={handlePrevRecommendation}
+            />
+            }
 
 
             {location ? (

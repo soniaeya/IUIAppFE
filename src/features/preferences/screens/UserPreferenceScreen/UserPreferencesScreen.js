@@ -98,12 +98,13 @@ export default function UserPreferencesScreen() {
     const handleSave = async () => {
         try {
             setIsSaving(true);
-
             const response = await axios.post(`${BASE_URL}/api/preferences/`, {
                 activity,
                 time,
                 env
             });
+
+            console.log("Saving preferences:", {activity, time, env});
 
 
             navigation.navigate('MapScreen');
