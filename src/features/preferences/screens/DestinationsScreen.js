@@ -7,7 +7,7 @@ import {
     Text,
     TouchableOpacity
 } from 'react-native';
-import MapComponent from "./MapScreen/MapComponent";
+import MapComponent from "../../../app/MapScreen/Components/MapComponent";
 
 export default function DestinationsScreen({ navigation }) {
     const [searchQuery, setSearchQuery] = useState('');

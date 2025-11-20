@@ -1,0 +1,39 @@
+Gym Name,Type,Level,Env
+Thai Long,Muay Thai,"[1, 2, 3]",Indoor
+Yeuang Kraai Muay Thai,Muay Thai,"[1, 2]",Indoor
+Apex Downtown,Muay Thai,"[1, 2]",Indoor
+Titans Academy,Muay Thai,[1],Indoor
+Mizu Montreal,Muay Thai,"[1, 2]",Indoor
+Carlson Gracie Montreal,Muay Thai,"[1, 2]",Indoor
+Concordia University Savate,Savate,"[1, 2, 3]",Indoor
+Escouade Savate,Savate,"[1, 2]",Indoor
+Mcgill Gym,Savate,[1],Indoor
+Boxxing studio,Boxing,[1],Indoor
+Underdog,Boxing,"[1, 2, 3]",Indoor
+Studio Counterback,Boxing,"[1, 2, 3]",Indoor
+UD Performance,Boxing,"[1, 2]",Indoor
+Pelea Boxing Club,Boxing,"[1, 2]",Indoor
+The Corner ,Boxing,[3],Indoor
+Pound for Pound,Boxing,[3],Indoor
+Hard Knox Gym,Boxing,[1],Indoor
+The Ring,Boxing,"[1, 2]",Indoor
+Silver Tooth,Boxing,"[1, 2, 3]",Indoor
+Puncher,Boxing,"[ 1, 2, 3]",Indoor
+Academy Ness Martial,Boxing,"[ 1, 2, 3]",Indoor
+Academie Frontenac,Boxing,"[ 1, 2, 3]",Indoor
+Tristar,Boxing,"[ 1, 2, 3]",Indoor
+La Fontaine Park,Parks,,Outdoor
+Mount Royal Park,Parks,,Outdoor
+Parc Westmount,Parks,,Outdoor
+Parc Jarry,Parks,,Outdoor
+Summit Woods,Parks,,Outdoor
+Enso Yoga,Relax,,Indoor
+Spa Damo,Relax,,Indoor
+Spa St.James,Relax,,Indoor
+Le Spa Amazing Feet,Relax,,Indoor
+Puppy Sphere | Puppy Yoga (Montreal),Relax,,Indoor
+Mandy’s Crescent,Eat,,Indoor
+"Poulet Rouge, Saint-Catherine",Eat,,Indoor
+"Spicebros, Saint Catherine",Eat,,Indoor
+Chai Shai Montreal,Eat,,Indoor
+Tsujiri Montreal,Eat,,Indoor

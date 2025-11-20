@@ -1,18 +1,14 @@
 import React, {useState} from 'react';
-import {Platform, SafeAreaView, View} from 'react-native';
+import {Platform, View} from 'react-native';
 import styled from 'styled-components/native';
-import {gs} from '../../../../ui/theme/GlobalStyles';
+import {gs} from '../theme/GlobalStyles';
 import {useNavigation} from '@react-navigation/native';
-import {Searchbar, Text} from 'react-native-paper';
-import MapScreen from '../MapScreen/MapScreen';
-import MapComponent from '../MapScreen/MapComponent';
-import {TimePickerField} from './TimePickerField';
-import loginScreen from "../LoginScreen";
+import {TimePickerField} from './Components/TimePickerField';
 import axios from "axios";
-import ActivityToggleButton from "./ActivityToggleButton";
+import ActivityToggleButton from "./Components/ActivityToggleButton";
 import { ScrollView } from "react-native";
-import IndoorOutdoorDropdown from "./IndoorOutdoorDropdown";
-import IntensityDropdown from "./IntensityDropdown";
+import IndoorOutdoorDropdown from "./Components/IndoorOutdoorDropdown";
+import IntensityDropdown from "./Components/IntensityDropdown";
 
 const highlight = "#6f4b63"
 const dark_background = "#b0928f"
@@ -41,6 +37,13 @@ const MainTitleDiv = styled.View`
 const Title = styled.Text`
     font-size: 20px;
     font-weight: 700;
+    color: ${highlight};
+    margin-bottom: 10px;
+`;
+
+const SubTitle = styled.Text`
+    font-size: 18px;
+    font-weight: 500;
     color: ${highlight};
     margin-bottom: 10px;
 `;
@@ -82,15 +85,54 @@ const GridContainer = styled.View`
 /* highlight dark purple #ad959b*/
 
 
+const ACTIVITY_CONFIG = {
+    boxing: {
+        label: "Boxing🥊",
+        type: "Boxing",
+        env: "Indoor",
+        active: false,      // ⭐ state of toggle
+    },
+    muaythai: {
+        label: "Muay Thai 🇹🇭",
+        type: "Muay Thai",
+        env: "Indoor",
+        active: false,
+    },
+    kb: {
+        label: "Savate 🇫🇷",
+        type: "Savate",
+        env: "Indoor",
+        active: false,
+    },
+    parks: {
+        label: "Parks🌳️",
+        type: "Parks",
+        env: "Outdoor",
+        active: false,
+    },
+    meditation: {
+        label: "Relax 😌",
+        type: "Relax",
+        env: "Indoor",
+        active: false,
+    },
+    eat: {
+        label: "Eat 🍽️",
+        type: "Eat",
+        env: "Indoor",
+        active: false,
+    },
+};
+
 
 export default function UserPreferencesScreen() {
     const navigation = useNavigation();
-    const [activity, setActivity] = React.useState('');
     const [env, setEnv] = React.useState('');
     const [time, setTime] = React.useState(new Date());
     const [isSaving, setIsSaving] = useState(false);
     const [intensity, setIntensity] = useState(null);
-
+    const [activityConfig, setActivityConfig] = useState(ACTIVITY_CONFIG);
+    const [activity, setActivity] = useState("");
 
     const BASE_URL =
         Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
@@ -124,14 +166,6 @@ export default function UserPreferencesScreen() {
         }
     };
 
-    const [activities, setActivities] = useState({
-        boxing: false,
-        kb: false,
-        muaythai: false,
-        tkd: false,
-        bjj: false,
-        karate: false,
-    });
 
     function formatActivityLabel(key) {
         let label;
@@ -145,19 +179,19 @@ export default function UserPreferencesScreen() {
                 label = "Muay Thai 🇹🇭";
                 break;
 
-            case "tkd":
-                label = "TKD 🇰🇷"
+            case "parks":
+                label = "Parks🌳️"
                 break;
-            case "bjj":
-                label = key.toUpperCase() + "      🇧🇷";
+            case "meditation":
+                label = "Relax 😌";
                 break;
 
             case "kb":
                 label = "Savate 🇫🇷";
                 break;
 
-            case "karate":
-                label = "Karate 🥋";
+            case "eat":
+                label = "Eat 🍽️";
                 break;
 
 
@@ -181,17 +215,43 @@ export default function UserPreferencesScreen() {
                 <Title>Activity</Title>
 
                 <GridContainer>
-                    {Object.entries(activities).map(([key, value]) => (
+                    {Object.entries(activityConfig).map(([key, cfg]) => (
                         <ActivityToggleButton
                             key={key}
-                            activityLabel={formatActivityLabel(key)}
-                            value={value}
-                            onChange={(newVal) =>
-                                setActivities({...activities, [key]: newVal})
-                            }
+                            activityLabel={cfg.label}      // from config
+                            value={cfg.active}             // on/off from config
+                            onChange={(newVal) => {
+                                // 1️⃣ Update active ON/OFF in config
+                                setActivityConfig(prev => {
+                                    const next = {
+                                        ...prev,
+                                        [key]: {
+                                            ...prev[key],
+                                            active: newVal,
+                                        },
+                                    };
+
+                                    // ⭐ key–value pair log, e.g. { Boxing: true }
+                                    console.log({ [cfg.type]: newVal });
+
+                                    return next;
+                                });
+
+                                // 2️⃣ Update preference states for backend
+                                if (newVal) {
+                                    // turned ON → set current activity + env
+                                    setActivity(cfg.type);  // e.g., "Boxing"
+                                    setEnv(cfg.env);        // e.g., "Indoor" / "Outdoor"
+                                } else if (activity === cfg.type) {
+                                    // turned OFF the currently selected activity → clear it
+                                    setActivity('');
+                                }
+                            }}
                         />
                     ))}
                 </GridContainer>
+
+
             </ItemPreferenceDiv>
             <ItemPreferenceDiv>
                 <ItemPreferenceLine></ItemPreferenceLine>
@@ -209,7 +269,7 @@ export default function UserPreferencesScreen() {
 
                 <ItemPreferenceDiv>
                 <Title>Preferred Time</Title>
-                <TimePickerField value={time} onChange={setTime}></TimePickerField>
+                    <TimePickerField value={time} onChange={setTime}></TimePickerField>
 
             </ItemPreferenceDiv>
 

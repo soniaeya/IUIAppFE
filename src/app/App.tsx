@@ -4,16 +4,16 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import HomeScreen from '../features/preferences/screens/HomeScreen';
-import UserPreferencesScreen from '../features/preferences/screens/UserPreferenceScreen/UserPreferencesScreen';
+import UserPreferencesScreen from './UserPreferenceScreen/UserPreferencesScreen';
 import DestinationsScreen from '../features/preferences/screens/DestinationsScreen';
-import MapScreen from '../features/preferences/screens/MapScreen/MapScreen';
+import MapScreen from './MapScreen/MapScreen';
 
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import 'react-native-get-random-values';
 import { AppRegistry } from 'react-native';
-import LoginScreen from "../features/preferences/screens/LoginScreen";
-import SignupScreen from "../features/preferences/screens/SignupScreen/SignupScreen";
+import LoginScreen from "./LoginScreen/LoginScreen";
+import SignupScreen from "./SignupScreen/SignupScreen";
 
 
 const Stack = createNativeStackNavigator();

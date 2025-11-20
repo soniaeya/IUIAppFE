@@ -2,7 +2,7 @@ import styled from "styled-components/native";
 import MaterialDesignIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { Image } from "react-native";
 import React from "react";
-
+import { Picker } from '@react-native-picker/picker';
 const background_color = "white";
 const highlight = "#6f4b63";
 
@@ -44,6 +44,8 @@ export default function RecommendationBox({
 
                 <StatsContainer>
                     <StatsText>Your Rating</StatsText>:{'\n'}
+                    {/*Make picker for user rating*/}
+
                     <StatsText>User Rating</StatsText>:{' '}
                     {selectedLocation.rating} ★ ({selectedLocation.totalRatings})
                     {'\n'}

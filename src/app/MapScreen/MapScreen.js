@@ -5,7 +5,7 @@ import {
     StyleSheet, Text,
 
 } from 'react-native';
-import MapComponent from "./MapComponent";
+import MapComponent from "./Components/MapComponent";
 import {Button, DataTable, Dialog, List, Portal} from 'react-native-paper';
 import MaterialDesignIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import UserPreferencesScreen from "../UserPreferenceScreen/UserPreferencesScreen";
