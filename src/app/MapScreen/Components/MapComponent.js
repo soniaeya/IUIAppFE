@@ -34,8 +34,27 @@ export default function MapComponent() {
         return nextName;
     }
     const GOOGLE_API_KEY = "AIzaSyDgne1zVrGt-GIf8s2ayoNs6kE3O4iVUXc"; // or reuse the same you already use
+    const BASE_URL =
+        Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
+    const sendLocationToBackend = async (coords) => {
+        try {
+            const response = await axios.post(`${BASE_URL}/map/location`, {
+                latitude: coords.latitude,
+                longitude: coords.longitude,
+            });
 
-// This mimics "select the first autocomplete result for this text"
+            console.log("Location sent to backend:", response.data);
+        } catch (err) {
+            if (err.response) {
+                console.log("Backend error:", err.response.data);
+            } else {
+                console.log("Network error sending location:", err.message);
+            }
+        }
+    };
+
+
+
     const selectFirstPlaceForText = async (text) => {
         if (!text || !text.trim()) return;
 
@@ -160,8 +179,14 @@ export default function MapComponent() {
                 position => {
                     console.log('Location retrieved:', position.coords);
                     const { latitude, longitude } = position.coords;
-                    setLocation({ latitude, longitude });
+
+                    const coords = { latitude, longitude };
+
+                    setLocation(coords);
                     setLoading(false);
+
+                    // ⭐ SEND TO BACKEND HERE
+                    sendLocationToBackend(coords);
                 },
                 error => {
                     console.log('Geolocation error:', error);
@@ -171,6 +196,7 @@ export default function MapComponent() {
                 { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
             );
         };
+
 
         requestLocationPermission();
     }, []);
@@ -256,7 +282,13 @@ export default function MapComponent() {
         });
 
 
+
+
         console.log("Selected location:", newLocation);
+        sendLocationToBackend(newLocation);
+
+
+
         if (mapRef.current) {
             mapRef.current.animateToRegion(
                 {
