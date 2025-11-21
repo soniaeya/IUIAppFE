@@ -132,8 +132,6 @@ export default function UserPreferencesScreen() {
     const [isSaving, setIsSaving] = useState(false);
     const [intensity, setIntensity] = useState(null);
     const [activityConfig, setActivityConfig] = useState(ACTIVITY_CONFIG);
-    const [activity, setActivity] = useState("");
-// Return a list of selected activity types, e.g. ["Boxing", "Parks"]
     const getSelectedActivities = () =>
         Object.values(activityConfig)
             .filter(cfg => cfg.active)
@@ -149,7 +147,6 @@ export default function UserPreferencesScreen() {
             const selectedActivities = getSelectedActivities();
 
             const payload = {
-                activity,                 // main chosen activity type (e.g. "Boxing")
                 activities: selectedActivities,   // all toggled types
                 env,
                 intensity,                // can be null if not chosen
@@ -173,42 +170,6 @@ export default function UserPreferencesScreen() {
             setIsSaving(false);
         }
     };
-
-
-
-    function formatActivityLabel(key) {
-        let label;
-
-        switch (key) {
-            case "boxing":
-                label = "Boxing🥊";
-                break;
-
-            case "muaythai":
-                label = "Muay Thai 🇹🇭";
-                break;
-
-            case "parks":
-                label = "Parks🌳️"
-                break;
-            case "meditation":
-                label = "Relax 😌";
-                break;
-
-            case "kb":
-                label = "Savate 🇫🇷";
-                break;
-
-            case "eat":
-                label = "Eat 🍽️";
-                break;
-
-
-        }
-
-        return label;
-    }
-
 
     return (
         <View style={gs.screen}>
@@ -248,12 +209,7 @@ export default function UserPreferencesScreen() {
 
                                 // 2️⃣ Update preference states for backend
                                 if (newVal) {
-                                    // turned ON → set current activity + env
-                                    setActivity(cfg.type);  // e.g., "Boxing"
                                     setEnv(cfg.env);        // e.g., "Indoor" / "Outdoor"
-                                } else if (activity === cfg.type) {
-                                    // turned OFF the currently selected activity → clear it
-                                    setActivity('');
                                 }
                             }}
                         />
