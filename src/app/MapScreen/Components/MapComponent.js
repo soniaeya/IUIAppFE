@@ -15,25 +15,26 @@ export default function MapComponent() {
     const mapRef = useRef(null);
     const searchRef = useRef(null);
     const [mapSearchQuery, setMapSearchQuery] = useState("");
+    const [ratings, setRatings] = useState({});
 
 
     const [selectedLocation, setSelectedLocation] = useState(null);
     const [currentGymIndex, setCurrentGymIndex] = useState(0);
     const gyms = ["Underdog Montreal", "Hard Knox Montreal", "Concordia University"];
 
-    const writeToSearchBar = (nextName) => {
-        if (!searchRef.current) return;          // ref not ready yet
-
-        // Set the visible text in the search bar
-        searchRef.current.setAddressText(nextName);
-
-        // Trigger autocomplete search (only if method exists)
-        if (searchRef.current._handleChangeText) {
-            searchRef.current._handleChangeText(nextName);
+    const selectLocationByName = async (name) => {
+        if (searchRef.current) {
+            searchRef.current.setAddressText(name);
         }
-        return nextName;
-    }
-    const GOOGLE_API_KEY = "AIzaSyDgne1zVrGt-GIf8s2ayoNs6kE3O4iVUXc"; // or reuse the same you already use
+        setMapSearchQuery(name);   // keep text input in sync
+
+        await selectFirstPlaceForText(name);  // does the actual Google lookup + handlePlaceSelect
+    };
+
+
+
+
+
     const BASE_URL =
         Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
     const sendLocationToBackend = async (coords) => {
@@ -53,13 +54,32 @@ export default function MapComponent() {
         }
     };
 
+    const getCurrentLocation = () => {
+        Geolocation.getCurrentPosition(
+            position => {
+                console.log('Location retrieved:', position.coords);
+                const { latitude, longitude } = position.coords;
+
+                const coords = { latitude, longitude };
+
+                setLocation(coords);
+                setLoading(false);
+
+                // ⭐ SEND TO BACKEND HERE
+                sendLocationToBackend(coords);
+            },
+            error => {
+                console.log('Geolocation error:', error);
+                setError(`Location error: ${error.message}`);
+                setLoading(false);
+            },
+            { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
+        );
+    };
 
 
     const selectFirstPlaceForText = async (text) => {
-        if (!text || !text.trim()) return;
-
         try {
-            // 1) Find a place from text (like the first autocomplete result)
             const findResp = await axios.get(
                 "https://maps.googleapis.com/maps/api/place/findplacefromtext/json",
                 {
@@ -73,6 +93,8 @@ export default function MapComponent() {
             );
 
             const candidates = findResp.data.candidates || [];
+            console.log("candidates for", text, candidates);
+
             if (candidates.length === 0) {
                 console.log("No candidates for text:", text);
                 return;
@@ -80,7 +102,6 @@ export default function MapComponent() {
 
             const first = candidates[0];
 
-            // 2) (Optional but nicer) get full details using place_id
             const detailsResp = await axios.get(
                 "https://maps.googleapis.com/maps/api/place/details/json",
                 {
@@ -88,7 +109,8 @@ export default function MapComponent() {
                         place_id: first.place_id,
                         key: "AIzaSyDgne1zVrGt-GIf8s2ayoNs6kE3O4iVUXc",
                         fields:
-                            "name,geometry,formatted_address,photos," +
+                        // ⭐ add place_id here
+                            "place_id,name,geometry,formatted_address,photos," +
                             "formatted_phone_number,website,rating,user_ratings_total," +
                             "opening_hours,address_components",
                     },
@@ -96,16 +118,24 @@ export default function MapComponent() {
             );
 
             const details = detailsResp.data.result;
-            if (!details) return;
+            console.log("details.place_id from Next/Prev:", details.place_id); // debug
 
-            // 3) Reuse your existing logic that runs when user taps a result
-            //    (if you want, you can pull the useful parts out of handlePlaceSelect
-            //     into a separate function and call it here)
+            if (!details) {
+                console.log("No details for first candidate");
+                return;
+            }
+
             handlePlaceSelect({ description: text }, details);
+            return details;
         } catch (err) {
-            console.log("Error selecting first place:", err.message);
+            console.log("Error selecting first place:", err.message, err.response?.data);
         }
     };
+
+
+
+
+
 
 
     const handleNextRecommendation = async () => {
@@ -113,36 +143,27 @@ export default function MapComponent() {
         const nextName = gyms[nextIndex];
 
         setCurrentGymIndex(nextIndex);
+        console.log("Next gym:", nextName);   // 🔍 add this
 
-        // optional: keep your visual search bar in sync
-        if (searchRef.current) {
-            searchRef.current.setAddressText(nextName);
-        }
-
-        // 🔥 This line effectively "selects the first option"
-        await selectFirstPlaceForText(nextName);
+        await selectLocationByName(nextName);
 
         return nextName;
     };
 
 
+
+
     const handlePrevRecommendation = async () => {
-        const prevIndex =
-            (currentGymIndex - 1 + gyms.length) % gyms.length;
+        const prevIndex = (currentGymIndex - 1 + gyms.length) % gyms.length;
         const prevName = gyms[prevIndex];
 
         setCurrentGymIndex(prevIndex);
 
-        // Update visible search bar
-        if (searchRef.current) {
-            searchRef.current.setAddressText(prevName);
-        }
-
-        // Auto-select first result
-        await selectFirstPlaceForText(prevName);
+        await selectLocationByName(prevName);
 
         return prevName;
     };
+
 
     useEffect(() => {
         const requestLocationPermission = async () => {
@@ -174,50 +195,13 @@ export default function MapComponent() {
             }
         };
 
-        const getCurrentLocation = () => {
-            Geolocation.getCurrentPosition(
-                position => {
-                    console.log('Location retrieved:', position.coords);
-                    const { latitude, longitude } = position.coords;
 
-                    const coords = { latitude, longitude };
-
-                    setLocation(coords);
-                    setLoading(false);
-
-                    // ⭐ SEND TO BACKEND HERE
-                    sendLocationToBackend(coords);
-                },
-                error => {
-                    console.log('Geolocation error:', error);
-                    setError(`Location error: ${error.message}`);
-                    setLoading(false);
-                },
-                { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
-            );
-        };
 
 
         requestLocationPermission();
     }, []);
 
-    const handleSearch = async () => {
-        try {
-            const response = await axios.put("http://10.0.2.2:8000/map/search", {
-                searchQuery: mapSearchQuery,
-            });
-            console.log("Server response:", response.data);
-        } catch (error) {
-            if (error.response) {
-                console.log("STATUS:", error.response.status);
-                console.log("DATA:", error.response.data);
-            } else {
-                console.log("NETWORK ERROR:", error.message);
-                alert("Could not reach server");
-            }
-        }
 
-    }
 
 
    const getShortAddress = (details) => {
@@ -229,7 +213,7 @@ export default function MapComponent() {
         return `${streetNumber} ${route}`.trim().replace(/^, /, '');
     };
     const handlePlaceSelect = (data, details) => {
-
+        const placeId = details.place_id;
         const shortAddress = getShortAddress(details);
 
         let photoUrl = null;
@@ -279,6 +263,7 @@ export default function MapComponent() {
             isOpenNow,
             todaysHours,
             postalCode,
+            placeId,
         });
 
 
@@ -390,12 +375,23 @@ export default function MapComponent() {
 
             </View>
 
-            {selectedLocation?.photo && <RecommendationBox
-                selectedLocation={selectedLocation}
-                onNextRecommendation={handleNextRecommendation}
-                onPrevRecommendation={handlePrevRecommendation}
-            />
-            }
+            {selectedLocation?.placeId && (
+                <RecommendationBox
+                    selectedLocation={selectedLocation}
+                    onNextRecommendation={handleNextRecommendation}
+                    onPrevRecommendation={handlePrevRecommendation}
+                    getCurrentLocation={getCurrentLocation}
+                    ratings={ratings}
+                    onSetRating={(id, value) =>
+                        setRatings(prev => ({
+                            ...prev,
+                            [id]: value,
+                        }))
+                    }
+                />
+            )}
+
+
 
 
             {location ? (

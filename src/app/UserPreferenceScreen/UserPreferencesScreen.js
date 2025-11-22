@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Platform, View} from 'react-native';
+import {AlertEnv, Platform, View} from 'react-native';
 import styled from 'styled-components/native';
 import {gs} from '../theme/GlobalStyles';
 import {useNavigation} from '@react-navigation/native';
@@ -9,7 +9,7 @@ import ActivityToggleButton from "./Components/ActivityToggleButton";
 import { ScrollView } from "react-native";
 import IndoorOutdoorDropdown from "./Components/IndoorOutdoorDropdown";
 import IntensityDropdown from "./Components/IntensityDropdown";
-
+import CustomAlert from "./Components/CustomAlert";
 const highlight = "#6f4b63"
 const dark_background = "#b0928f"
 const background_color= "white"
@@ -132,6 +132,8 @@ export default function UserPreferencesScreen() {
     const [isSaving, setIsSaving] = useState(false);
     const [intensity, setIntensity] = useState(null);
     const [activityConfig, setActivityConfig] = useState(ACTIVITY_CONFIG);
+    const [alertEnvVisible, setAlertEnvVisible] = useState(false);
+    const [intensityAlertVisible, setIntensityAlertVisible] = useState(false); // intensity
     const getSelectedActivities = () =>
         Object.values(activityConfig)
             .filter(cfg => cfg.active)
@@ -144,13 +146,23 @@ export default function UserPreferencesScreen() {
         try {
             setIsSaving(true);
 
+            if (!env) {
+                setAlertEnvVisible(true);
+                return;
+            }
+
+            if (!intensity) {
+                setIntensityAlertVisible(true);
+                return;
+            }
+
             const selectedActivities = getSelectedActivities();
 
             const payload = {
-                activities: selectedActivities,   // all toggled types
+                activities: selectedActivities,
                 env,
-                intensity,                // can be null if not chosen
-                time: time.toISOString(), // send ISO string to FastAPI
+                intensity,
+                time: time.toISOString(),
             };
 
             console.log("Saving preferences payload:", payload);
@@ -161,18 +173,31 @@ export default function UserPreferencesScreen() {
         } catch (err) {
             if (err.response) {
                 console.error("Server error:", err.response.data);
-                alert(`Failed: ${JSON.stringify(err.response.data)}`);
+                Alert.alert("Failed", JSON.stringify(err.response.data));
             } else {
                 console.error("Network / other error:", err);
-                alert("Network error while saving preferences");
+                Alert.alert("Network error", "Error while saving preferences");
             }
         } finally {
             setIsSaving(false);
         }
     };
 
+
     return (
         <View style={gs.screen}>
+            <CustomAlert
+                visible={alertEnvVisible}
+                title="Missing Information"
+                message="Please select an environment (Indoor or Outdoor)"
+                onClose={() => setAlertEnvVisible(false)}
+            />
+            <CustomAlert
+                visible={intensityAlertVisible}
+                title="Missing Information"
+                message="Please select an intensity level"
+                onClose={() => setIntensityAlertVisible(false)}
+            />
             <ScrollView
                 contentContainerStyle={{ paddingBottom: 40 }}
                 showsVerticalScrollIndicator={false}

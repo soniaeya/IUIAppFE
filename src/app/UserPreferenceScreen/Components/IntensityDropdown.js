@@ -67,7 +67,9 @@ export default function IntensityDropdown({ value, onChange }) {
 
     return (
         <Wrapper>
-            <Selector onPress={() => setOpen(!open)}>
+            <Selector onPress={() => setOpen(!open)}
+
+            >
                 <SelectorText>
                     {value ? value : "Select Intensity"}
                 </SelectorText>

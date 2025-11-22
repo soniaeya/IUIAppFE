@@ -1,19 +1,32 @@
 import styled from "styled-components/native";
 import MaterialDesignIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import { Image } from "react-native";
-import React from "react";
-import { Picker } from '@react-native-picker/picker';
+import {Image, Text, TouchableOpacity} from "react-native";
+import React, {useEffect, useState} from "react";
+import {Picker} from '@react-native-picker/picker';
+import StarRatingDropdown from "./StarRatingModal";
+import RatingDropdown from "./StarRatingModal";
+
 const background_color = "white";
 const highlight = "#6f4b63";
+import StarRatingModal from "./StarRatingModal";
+
 
 export default function RecommendationBox({
                                               selectedLocation,
-                                              onNextRecommendation,
-                                              onPrevRecommendation,
+                                              onNextRecommendation, onPrevRecommendation,
+                                              ratings,
+                                              onSetRating,
                                           }) {
+    const [ratingModalVisible, setRatingModalVisible] = useState(false);
+
+    const userRatingForThisPlace = ratings[selectedLocation.placeId];
+    const currentRating = ratings[selectedLocation?.placeId];
+
+
+
+
     return (
         <RecommendationContainer>
-            {/* NEXT */}
             <MaterialDesignIcons
                 name="chevron-right"
                 size={40}
@@ -43,9 +56,28 @@ export default function RecommendationBox({
                 <GymTitle>{selectedLocation.name}</GymTitle>
 
                 <StatsContainer>
-                    <StatsText>Your Rating</StatsText>:{'\n'}
-                    {/*Make picker for user rating*/}
+                    <TouchableOpacity
+                        style={{zIndex: 999, position: "absolute"}}
+                        onPress={() => {
+                            if (!selectedLocation?.placeId) {
+                                console.warn("Cannot rate: missing placeId");
+                                return;
+                            }
+                            setRatingModalVisible(true);
+                        }}
 
+                    >
+
+
+                        <StatsText>
+                            Your Rating: {currentRating ? `${currentRating}★` : "No rating"}
+                        </StatsText>
+
+                        {console.log(JSON.stringify(ratings))}
+                    </TouchableOpacity>
+
+
+                    <Text>{"\n"}</Text>
                     <StatsText>User Rating</StatsText>:{' '}
                     {selectedLocation.rating} ★ ({selectedLocation.totalRatings})
                     {'\n'}
@@ -64,10 +96,26 @@ export default function RecommendationBox({
 
             <ImageContainer>
                 <Image
-                    source={{ uri: selectedLocation.photo }}
-                    style={{ width: "100%", height: 200, marginTop: 5, borderRadius: 20 }}
+                    source={{uri: selectedLocation.photo}}
+                    style={{width: "100%", height: 200, marginTop: 5, borderRadius: 20}}
                 />
             </ImageContainer>
+            <StarRatingModal
+                visible={ratingModalVisible}
+                initialValue={currentRating || 0}
+                onSubmit={async (value) => {
+                    const id = selectedLocation?.placeId;
+                    if (!id) {
+                        console.warn("No placeId for selected location, skipping rating save.");
+                        return;
+                    }
+                    onSetRating(id, value);  // ✅ correct
+                }}
+                onClose={() => setRatingModalVisible(false)}
+            />
+
+
+
         </RecommendationContainer>
     );
 }
