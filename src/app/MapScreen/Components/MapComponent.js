@@ -8,7 +8,7 @@ import axios from "axios";
 import RecommendationBox from "./RecommendationBox";
 
 
-export default function MapComponent() {
+export default function MapComponent({ userId  }) {
     const [location, setLocation] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -53,7 +53,9 @@ export default function MapComponent() {
         };
 
         fetchRecommendations();
-    }, []);
+    }, []);   // 👈 runs exactly once
+
+
 
     const selectLocationByName = async (name) => {
         if (searchRef.current) {
@@ -125,9 +127,10 @@ export default function MapComponent() {
     };
     const updateUserLocation = async (coords) => {
         await axios.put(`${BASE_URL}/user/location`, {
-
+            user_id: userId,
             location: coords,
         });
+
     };
 
     const getCurrentLocation = () => {

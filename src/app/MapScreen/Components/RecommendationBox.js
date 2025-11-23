@@ -2,16 +2,8 @@ import styled from "styled-components/native";
 import MaterialDesignIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import {Image, Text, TouchableOpacity} from "react-native";
 import React, {useEffect, useState} from "react";
-import {Picker} from '@react-native-picker/picker';
-import StarRatingDropdown from "./StarRatingModal";
-import RatingDropdown from "./StarRatingModal";
-
 const background_color = "white";
-const highlight = "#6f4b63";
 import StarRatingModal from "./StarRatingModal";
-import {getCurrentPosition} from "@react-native-community/geolocation/js/implementation";
-
-
 export default function RecommendationBox({
                                               selectedLocation,
                                               onNextRecommendation,

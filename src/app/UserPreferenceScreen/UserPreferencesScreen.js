@@ -125,7 +125,7 @@ const ACTIVITY_CONFIG = {
 };
 
 
-export default function UserPreferencesScreen() {
+export default function UserPreferencesScreen({userId}) {
     const navigation = useNavigation();
     const [env, setEnv] = React.useState('');
     const [time, setTime] = React.useState(new Date());
@@ -183,7 +183,10 @@ export default function UserPreferencesScreen() {
             // MUST IMPORT Alert ABOVE
             const response = await axios.post(`${BASE_URL}/api/preferences/`, payload);
 
-            navigation.navigate("MapScreen");
+            navigation.navigate("MapScreen", {
+                userId,
+                preferencesSet: true,
+            });
         } catch (err) {
             if (err.response) {
                 console.error("Server error:", err.response.data);

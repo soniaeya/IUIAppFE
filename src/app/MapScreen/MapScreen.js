@@ -15,8 +15,8 @@ import axios from "axios";
 
 const highlight = "#6f4b63"
 
-export default function MapScreen() {
-    const navigation = useNavigation();
+export default function MapScreen({ route, navigation }) {
+    const { userId, email} = route.params;  // 👈 comes from LoginScreen
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedDestination, setSelectedDestination] = useState(null);
 
@@ -40,13 +40,13 @@ export default function MapScreen() {
 
     return (
         <View style={styles.container}>
-            <MapComponent></MapComponent>
+            <MapComponent userId={userId} />
 
 
             <MaterialDesignIcons
 
                 name="account-circle-outline"
-                color={highlight}
+                color={"#454545"}
                 size={60}
                 style={{
                     position: 'absolute',

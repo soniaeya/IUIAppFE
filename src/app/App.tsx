@@ -24,7 +24,7 @@ export default function App() {
             icon: props => <MaterialCommunityIcons {...props} />,
         }}>
             <NavigationContainer>
-                <Stack.Navigator initialRouteName="UserPreferencesScreen" screenOptions={{ headerShown: false }}>
+                <Stack.Navigator initialRouteName="LoginScreen" screenOptions={{ headerShown: false }}>
                     <Stack.Screen name="HomeScreen" component={HomeScreen} />
                     <Stack.Screen name="UserPreferencesScreen" component={UserPreferencesScreen} />
                     <Stack.Screen name="DestinationsScreen" component={DestinationsScreen} />

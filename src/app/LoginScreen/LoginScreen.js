@@ -6,13 +6,10 @@ import {
     KeyboardAvoidingView,
     Platform,
     TouchableWithoutFeedback,
-    Keyboard,
+    Keyboard, Alert,
 } from 'react-native';
 import styled from 'styled-components/native';
 import { TextInput, Button, Text } from 'react-native-paper';
-import {navigate} from "@react-navigation/routers/src/CommonActions";
-import SignupScreen from "../SignupScreen/SignupScreen";
-
 const Container = styled(SafeAreaView)`
     flex: 1;
     background-color: #dbbdab;
@@ -104,20 +101,31 @@ export function LoginScreen({ navigation }) {
             });
 
             console.log("Login response:", response.data);
-            alert("Login successful!");
-            navigation.navigate('MapScreen');
+
+            const { user_id, email: userEmail } = response.data;
+
+            // Just to confirm:
+            console.log("Logged in user_id:", user_id);
+
+            Alert.alert("Login successful!");
+
+            navigation.navigate('UserPreferencesScreen', {
+                userId: user_id,
+            });
+
         } catch (error) {
             console.log("Login error:", error?.response?.data || error.message);
 
             if (error.response) {
-                alert(error.response.data.detail || "Login failed");
+                Alert.alert(error.response.data.detail || "Login failed");
             } else {
-                alert("Could not reach server");
+                Alert.alert("Could not reach server");
             }
         } finally {
             setLoading(false);
         }
     };
+
 
 
     return (
