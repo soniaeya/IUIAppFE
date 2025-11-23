@@ -19,8 +19,23 @@ export default function MapComponent() {
 
 
     const [selectedLocation, setSelectedLocation] = useState(null);
+    const [recommendations, setRecommendations] = useState([]);
+
+    const [currentIdx, setCurrentIdx] = useState(0);
     const [currentGymIndex, setCurrentGymIndex] = useState(0);
-    const gyms = ["Underdog Montreal", "Hard Knox Montreal", "Concordia University"];
+
+    useEffect(() => {
+        const fetchRecommendations = async () => {
+            try {
+                const res = await axios.get("http://10.0.2.2:8000/recommendations");
+                setRecommendations(res.data.gyms || []);
+            } catch (err) {
+                console.error("Error fetching recommendations", err);
+            }
+        };
+
+        fetchRecommendations();
+    }, []);
 
     const selectLocationByName = async (name) => {
         if (searchRef.current) {
@@ -80,6 +95,7 @@ export default function MapComponent() {
 
     const selectFirstPlaceForText = async (text) => {
         try {
+
             const findResp = await axios.get(
                 "https://maps.googleapis.com/maps/api/place/findplacefromtext/json",
                 {
@@ -135,35 +151,32 @@ export default function MapComponent() {
 
 
 
+    const goToIndex = async (idx) => {
+        if (!recommendations.length) return;
+
+        const boundedIdx = (idx + recommendations.length) % recommendations.length;
+        const name = recommendations[boundedIdx];
+
+        setCurrentIdx(boundedIdx);
+        await selectFirstPlaceForText(name);  // this will update selectedLocation
+    };
 
 
 
     const handleNextRecommendation = async () => {
-        const nextIndex = (currentGymIndex + 1) % gyms.length;
-        const nextName = gyms[nextIndex];
-
-        setCurrentGymIndex(nextIndex);
-        console.log("Next gym:", nextName);   // 🔍 add this
-
-        await selectLocationByName(nextName);
-
-        return nextName;
+        await goToIndex(currentIdx + 1);
     };
-
-
-
 
     const handlePrevRecommendation = async () => {
-        const prevIndex = (currentGymIndex - 1 + gyms.length) % gyms.length;
-        const prevName = gyms[prevIndex];
-
-        setCurrentGymIndex(prevIndex);
-
-        await selectLocationByName(prevName);
-
-        return prevName;
+        await goToIndex(currentIdx - 1);
     };
-
+    const handleSetRating = (placeId, value) => {
+        setRatings(prev => ({
+            ...prev,
+            [placeId]: value,
+        }));
+        // optional: POST/PUT to backend here
+    };
 
     useEffect(() => {
         const requestLocationPermission = async () => {
@@ -377,17 +390,11 @@ export default function MapComponent() {
 
             {selectedLocation?.placeId && (
                 <RecommendationBox
-                    selectedLocation={selectedLocation}
-                    onNextRecommendation={handleNextRecommendation}
-                    onPrevRecommendation={handlePrevRecommendation}
-                    getCurrentLocation={getCurrentLocation}
-                    ratings={ratings}
-                    onSetRating={(id, value) =>
-                        setRatings(prev => ({
-                            ...prev,
-                            [id]: value,
-                        }))
-                    }
+                selectedLocation={selectedLocation}
+                onNextRecommendation={handleNextRecommendation}
+                onPrevRecommendation={handlePrevRecommendation}
+                ratings={ratings}
+                onSetRating={handleSetRating}
                 />
             )}
 

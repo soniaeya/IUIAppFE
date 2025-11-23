@@ -13,14 +13,19 @@ import StarRatingModal from "./StarRatingModal";
 
 export default function RecommendationBox({
                                               selectedLocation,
-                                              onNextRecommendation, onPrevRecommendation,
+                                              onNextRecommendation,
+                                              onPrevRecommendation,
                                               ratings,
                                               onSetRating,
-                                          }) {
-    const [ratingModalVisible, setRatingModalVisible] = useState(false);
+                                          })
 
+{
+    const [ratingModalVisible, setRatingModalVisible] = useState(false);
+    if (!selectedLocation) {
+        return null; // or a loading skeleton
+    }
     const userRatingForThisPlace = ratings[selectedLocation.placeId];
-    const currentRating = ratings[selectedLocation?.placeId];
+    const currentRating = ratings[selectedLocation?.placeId] || 0;
 
 
 
