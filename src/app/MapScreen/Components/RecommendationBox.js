@@ -9,6 +9,7 @@ import RatingDropdown from "./StarRatingModal";
 const background_color = "white";
 const highlight = "#6f4b63";
 import StarRatingModal from "./StarRatingModal";
+import {getCurrentPosition} from "@react-native-community/geolocation/js/implementation";
 
 
 export default function RecommendationBox({
@@ -22,7 +23,35 @@ export default function RecommendationBox({
 {
     const [ratingModalVisible, setRatingModalVisible] = useState(false);
     if (!selectedLocation) {
-        return null; // or a loading skeleton
+
+        return (<EmptyRecommendationContainer>
+
+            <MaterialDesignIcons
+                name="chevron-right"
+                size={40}
+                style={{
+                    position: "absolute",
+                    right: 0,
+                    bottom: -445,
+                    zIndex: 999,
+                }}
+                onPress={onNextRecommendation}
+            />
+
+            {/* PREV */}
+            <MaterialDesignIcons
+                name="chevron-left"
+                size={40}
+                style={{
+                    position: "absolute",
+                    left: 0,
+                    bottom: -445,
+                    zIndex: 999,
+                }}
+                onPress={onPrevRecommendation}
+            />
+
+        </EmptyRecommendationContainer>)
     }
     const userRatingForThisPlace = ratings[selectedLocation.placeId];
     const currentRating = ratings[selectedLocation?.placeId] || 0;
@@ -132,6 +161,12 @@ const RecommendationContainer = styled.View`
     height: 300px;
     width: 100%;
     background-color: white;
+`;
+const EmptyRecommendationContainer = styled.View`
+
+    height: 0;
+    width: 100%;
+    background-color: blue;
 `;
 
 const RecommendationInfoContainer = styled.View`

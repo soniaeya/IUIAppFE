@@ -388,15 +388,15 @@ export default function MapComponent() {
 
             </View>
 
-            {selectedLocation?.placeId && (
-                <RecommendationBox
-                selectedLocation={selectedLocation}
-                onNextRecommendation={handleNextRecommendation}
-                onPrevRecommendation={handlePrevRecommendation}
-                ratings={ratings}
-                onSetRating={handleSetRating}
-                />
-            )}
+
+            <RecommendationBox
+            selectedLocation={selectedLocation}
+            onNextRecommendation={handleNextRecommendation}
+            onPrevRecommendation={handlePrevRecommendation}
+            ratings={ratings}
+            onSetRating={handleSetRating}
+            />
+
 
 
 

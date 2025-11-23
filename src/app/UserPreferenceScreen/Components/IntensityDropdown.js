@@ -54,7 +54,6 @@ export default function IntensityDropdown({ value, onChange }) {
     const [open, setOpen] = useState(false);
 
     const options = [
-        "Senior-Friendly",
         "Beginner",
         "Intermediate",
         "Advanced",
