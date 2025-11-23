@@ -60,7 +60,7 @@ export default function RecommendationBox({
 
 
     return (
-        <RecommendationContainer>
+        <RecommendationContainer style={{zIndex: 999, height: 300}}>
             <MaterialDesignIcons
                 name="chevron-right"
                 size={40}
@@ -86,7 +86,7 @@ export default function RecommendationBox({
                 onPress={onPrevRecommendation}
             />
 
-            <RecommendationInfoContainer>
+            <RecommendationInfoContainer style={{zIndex: 999, marginTop: 35}}>
                 <GymTitle>{selectedLocation.name}</GymTitle>
 
                 <StatsContainer>
@@ -128,7 +128,7 @@ export default function RecommendationBox({
                 </StatsContainer>
             </RecommendationInfoContainer>
 
-            <ImageContainer>
+            <ImageContainer style={{zIndex: 999, marginTop: 30}}>
                 <Image
                     source={{uri: selectedLocation.photo}}
                     style={{width: "100%", height: 200, marginTop: 5, borderRadius: 20}}
@@ -214,7 +214,7 @@ const ImageContainer = styled.View`
     padding: 10px;
     position: absolute;
     left: 45%;
-    height: 300px;
+    height: 200px;
     width: 55%;
     background-color: ${background_color};
 `;

@@ -381,14 +381,14 @@ export default function MapComponent() {
     }
 
     return (
-        <View style={styles.container}>
-            <View style={styles.searchContainer}>
-                {/* Weather alert bar */}
+        <View style={[styles.container]}>
+            <View style={[styles.searchContainer, {zIndex: 1999, top: 15, position: "absolute"}]}>
                 {weatherInfo && (
                     <View
                         style={[
                             styles.weatherBar,
                             getWeatherBarStyle(weatherInfo.main),
+                            {},
                         ]}
                     >
                         <Text style={styles.weatherBarText}>
