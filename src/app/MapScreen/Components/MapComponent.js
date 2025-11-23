@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import {View, StyleSheet, PermissionsAndroid, Platform, ActivityIndicator, Text} from 'react-native';
+import {View, StyleSheet, PermissionsAndroid, Platform, ActivityIndicator, Text, TouchableOpacity} from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
@@ -23,6 +23,24 @@ export default function MapComponent() {
 
     const [currentIdx, setCurrentIdx] = useState(0);
     const [currentGymIndex, setCurrentGymIndex] = useState(0);
+
+    const [weather, setWeather] = useState(null);
+    const [showWeatherModal, setShowWeatherModal] = useState(false);
+    const [weatherInfo, setWeatherInfo] = useState(null);
+    const [weatherLocked, setWeatherLocked] = useState(false);  // when true, API won't overwrite
+
+
+
+    useEffect(() => {
+        // 🔥 TEMP: manual weather override for testing
+        setWeatherInfo({
+            main: "Clear",          // "Clear", "Clouds", "Snow", "Rain"
+            description: "test rain",
+            temp: 12,
+        });
+    }, []);
+
+
 
     useEffect(() => {
         const fetchRecommendations = async () => {
@@ -69,6 +87,45 @@ export default function MapComponent() {
         }
     };
 
+
+
+    const getWeatherBarStyle = (main) => {
+        // main = "Rain", "Clear", "Clouds", "Snow", etc.
+        if (["Rain", "Drizzle", "Thunderstorm"].includes(main)) {
+            return { backgroundColor: "#3b82f6" }; // blue
+        }
+        if (["Snow"].includes(main)) {
+            return { backgroundColor: "#60a5fa" }; // lighter blue
+        }
+        if (["Clear"].includes(main)) {
+            return { backgroundColor: "#22c55e" }; // green
+        }
+        if (["Clouds"].includes(main)) {
+            return { backgroundColor: "#9ca3af" }; // gray
+        }
+        return { backgroundColor: "#6f4b63" }; // default purple
+    };
+
+    const renderWeatherMessage = (info) => {
+        const main = info.main;
+        const temp = info.temp;
+
+        if (["Rain", "Drizzle", "Thunderstorm"].includes(main)) {
+            return `🌧️ It's ${main.toLowerCase()} — better to choose Indoor activities today.`;
+        }
+        if (["Snow"].includes(main)) {
+            return `❄️ Snowy weather — Indoor activities might be more comfortable.`;
+        }
+        if (["Clear"].includes(main)) {
+            return `☀️ Clear skies — Outdoor or Indoor, your choice!`;
+        }
+        if (["Clouds"].includes(main)) {
+            return `☁️ Cloudy — Both Indoor and Outdoor could work.`;
+        }
+        return `🌤️ Current weather: ${main || "Unknown"}`;
+    };
+
+
     const getCurrentLocation = () => {
         Geolocation.getCurrentPosition(
             position => {
@@ -82,6 +139,7 @@ export default function MapComponent() {
 
                 // ⭐ SEND TO BACKEND HERE
                 sendLocationToBackend(coords);
+
             },
             error => {
                 console.log('Geolocation error:', error);
@@ -321,6 +379,19 @@ export default function MapComponent() {
     return (
         <View style={styles.container}>
             <View style={styles.searchContainer}>
+                {/* Weather alert bar */}
+                {weatherInfo && (
+                    <View
+                        style={[
+                            styles.weatherBar,
+                            getWeatherBarStyle(weatherInfo.main),
+                        ]}
+                    >
+                        <Text style={styles.weatherBarText}>
+                            {renderWeatherMessage(weatherInfo)}
+                        </Text>
+                    </View>
+                )}
 
                 <GooglePlacesAutocomplete
                     ref={searchRef}
@@ -414,6 +485,25 @@ export default function MapComponent() {
                     showsUserLocation={true}
                     followsUserLocation={true}
                 >
+                    {showWeatherModal && (
+                        <View style={styles.modalOverlay}>
+                            <View style={styles.modalBox}>
+                                <Text style={styles.modalTitle}>🌧️ Rain Alert</Text>
+                                <Text style={styles.modalText}>
+                                    It's currently raining in your area.
+                                    You may prefer **Indoor** activities today.
+                                </Text>
+
+                                <TouchableOpacity
+                                    style={styles.modalButton}
+                                    onPress={() => setShowWeatherModal(false)}
+                                >
+                                    <Text style={{ color: "white", fontWeight: "bold" }}>OK</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    )}
+
                     <Marker
                         coordinate={location}
                         title="Your Location"

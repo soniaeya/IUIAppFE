@@ -134,6 +134,19 @@ export default function UserPreferencesScreen() {
     const [activityConfig, setActivityConfig] = useState(ACTIVITY_CONFIG);
     const [alertEnvVisible, setAlertEnvVisible] = useState(false);
     const [intensityAlertVisible, setIntensityAlertVisible] = useState(false); // intensity
+
+    const [rainAlertVisible, setRainAlertVisible] = useState(false);
+    const handleEnvChange = (newEnv) => {
+        if (newEnv === "Outdoor" && isRaining) {
+            setRainAlertVisible(true);
+        }
+        setEnv(newEnv);
+    };
+
+
+    const isRaining = true; // set to true if raining, or pass weather info via navigation/context
+
+
     const getSelectedActivities = () =>
         Object.values(activityConfig)
             .filter(cfg => cfg.active)
@@ -198,6 +211,27 @@ export default function UserPreferencesScreen() {
                 message="Please select an intensity level"
                 onClose={() => setIntensityAlertVisible(false)}
             />
+
+            {/* 🌧️ Rain + Outdoor warning */}
+            <CustomAlert
+                visible={rainAlertVisible}
+                title="Weather Warning"
+                message="It is currently raining. We recommend choosing Indoor activities instead of Outdoor."
+                onClose={() => setRainAlertVisible(false)}
+            />
+
+            <CustomAlert
+                visible={alertEnvVisible}
+                title="Missing Information"
+                message="Please select an environment (Indoor or Outdoor)"
+                onClose={() => setAlertEnvVisible(false)}
+            />
+            <CustomAlert
+                visible={intensityAlertVisible}
+                title="Missing Information"
+                message="Please select an intensity level"
+                onClose={() => setIntensityAlertVisible(false)}
+            />
             <ScrollView
                 contentContainerStyle={{ paddingBottom: 40 }}
                 showsVerticalScrollIndicator={false}
@@ -216,7 +250,6 @@ export default function UserPreferencesScreen() {
                             activityLabel={cfg.label}      // from config
                             value={cfg.active}             // on/off from config
                             onChange={(newVal) => {
-                                // 1️⃣ Update active ON/OFF in config
                                 setActivityConfig(prev => {
                                     const next = {
                                         ...prev,
@@ -226,17 +259,18 @@ export default function UserPreferencesScreen() {
                                         },
                                     };
 
-                                    // ⭐ key–value pair log, e.g. { Boxing: true }
                                     console.log({ [cfg.type]: newVal });
-
                                     return next;
                                 });
 
-                                // 2️⃣ Update preference states for backend
                                 if (newVal) {
-                                    setEnv(cfg.env);        // e.g., "Indoor" / "Outdoor"
+                                    if (cfg.env === "Outdoor" && isRaining) {
+                                        setRainAlertVisible(true);
+                                    }
+                                    setEnv(cfg.env);
                                 }
                             }}
+
                         />
                     ))}
                 </GridContainer>
@@ -246,7 +280,8 @@ export default function UserPreferencesScreen() {
             <ItemPreferenceDiv>
                 <ItemPreferenceLine></ItemPreferenceLine>
                 <Title>Environment</Title>
-                <IndoorOutdoorDropdown value={env} onChange={setEnv} />
+                <IndoorOutdoorDropdown value={env} onChange={handleEnvChange} />
+
 
             </ItemPreferenceDiv>
                 <ItemPreferenceLine></ItemPreferenceLine>
