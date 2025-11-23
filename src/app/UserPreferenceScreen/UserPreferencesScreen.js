@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {AlertEnv, Platform, View} from 'react-native';
+import {Alert, AlertEnv, Platform, View} from 'react-native';
 import styled from 'styled-components/native';
 import {gs} from '../theme/GlobalStyles';
 import {useNavigation} from '@react-navigation/native';
@@ -180,21 +180,23 @@ export default function UserPreferencesScreen() {
 
             console.log("Saving preferences payload:", payload);
 
+            // MUST IMPORT Alert ABOVE
             const response = await axios.post(`${BASE_URL}/api/preferences/`, payload);
 
-            navigation.navigate('MapScreen');
+            navigation.navigate("MapScreen");
         } catch (err) {
             if (err.response) {
                 console.error("Server error:", err.response.data);
                 Alert.alert("Failed", JSON.stringify(err.response.data));
             } else {
-                console.error("Network / other error:", err);
-                Alert.alert("Network error", "Error while saving preferences");
+                console.error("Network error:", err);
+                Alert.alert("Error", "Network failure");
             }
         } finally {
             setIsSaving(false);
         }
     };
+
 
 
     return (
@@ -264,9 +266,7 @@ export default function UserPreferencesScreen() {
                                 });
 
                                 if (newVal) {
-                                    if (cfg.env === "Outdoor" && isRaining) {
-                                        setRainAlertVisible(true);
-                                    }
+
                                     setEnv(cfg.env);
                                 }
                             }}

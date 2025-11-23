@@ -34,7 +34,7 @@ export default function MapComponent() {
     useEffect(() => {
         // 🔥 TEMP: manual weather override for testing
         setWeatherInfo({
-            main: "Clear",          // "Clear", "Clouds", "Snow", "Rain"
+            main: "Rain",          // "Clear", "Clouds", "Snow", "Rain"
             description: "test rain",
             temp: 12,
         });
@@ -79,11 +79,10 @@ export default function MapComponent() {
 
             console.log("Location sent to backend:", response.data);
         } catch (err) {
-            if (err.response) {
-                console.log("Backend error:", err.response.data);
-            } else {
-                console.log("Network error sending location:", err.message);
-            }
+            console.log(
+                "Error sending location:",
+                err.response?.data || err.message
+            );
         }
     };
 
@@ -124,12 +123,17 @@ export default function MapComponent() {
         }
         return `🌤️ Current weather: ${main || "Unknown"}`;
     };
+    const updateUserLocation = async (coords) => {
+        await axios.put(`${BASE_URL}/user/location`, {
 
+            location: coords,
+        });
+    };
 
     const getCurrentLocation = () => {
         Geolocation.getCurrentPosition(
-            position => {
-                console.log('Location retrieved:', position.coords);
+            (position) => {
+                console.log("Location retrieved:", position.coords);
                 const { latitude, longitude } = position.coords;
 
                 const coords = { latitude, longitude };
@@ -137,18 +141,18 @@ export default function MapComponent() {
                 setLocation(coords);
                 setLoading(false);
 
-                // ⭐ SEND TO BACKEND HERE
+                // send to backend
                 sendLocationToBackend(coords);
-
             },
-            error => {
-                console.log('Geolocation error:', error);
+            (error) => {
+                console.log("Geolocation error:", error);
                 setError(`Location error: ${error.message}`);
                 setLoading(false);
             },
             { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
         );
     };
+
 
 
     const selectFirstPlaceForText = async (text) => {
