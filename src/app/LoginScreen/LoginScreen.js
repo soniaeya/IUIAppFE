@@ -107,10 +107,11 @@ export function LoginScreen({ navigation }) {
 
             const { user_id, email: returnedEmail } = response.data;
 
-            navigation.navigate('UserPreferencesScreen', {
+            navigation.navigate("UserPreferencesScreen", {
                 userId: user_id,
                 email: returnedEmail,
             });
+
         }
         catch (error) {
             console.log("Login error:", error?.response?.data || error.message);
