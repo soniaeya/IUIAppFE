@@ -9,24 +9,30 @@ import RecommendationBox from "./RecommendationBox";
 
 
 export default function MapComponent({ userId  }) {
+    const BASE_URL =
+        Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
+
     const [location, setLocation] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const mapRef = useRef(null);
     const searchRef = useRef(null);
     const [mapSearchQuery, setMapSearchQuery] = useState("");
+
+
     const [ratings, setRatings] = useState({});
-
-
     const [selectedLocation, setSelectedLocation] = useState(null);
+
     const [recommendations, setRecommendations] = useState([]);
-
     const [currentIdx, setCurrentIdx] = useState(0);
-    const [currentGymIndex, setCurrentGymIndex] = useState(0);
 
+    const [currentGymIndex, setCurrentGymIndex] = useState(0);
     const [weather, setWeather] = useState(null);
     const [showWeatherModal, setShowWeatherModal] = useState(false);
     const [weatherInfo, setWeatherInfo] = useState(null);
+
+
+
     const [weatherLocked, setWeatherLocked] = useState(false);  // when true, API won't overwrite
 
 
@@ -43,17 +49,76 @@ export default function MapComponent({ userId  }) {
 
 
     useEffect(() => {
+        if (!userId) return;
+
         const fetchRecommendations = async () => {
             try {
                 const res = await axios.get("http://10.0.2.2:8000/recommendations");
                 setRecommendations(res.data.gyms || []);
             } catch (err) {
+                if (err.response?.status === 400) {
+                    console.log("➡️ Preferences not set yet. Skipping recommendations.");
+                    return;
+                }
                 console.error("Error fetching recommendations", err);
             }
         };
 
         fetchRecommendations();
-    }, []);   // 👈 runs exactly once
+    }, [userId]);
+
+
+
+
+    const fetchBackendLocation = async () => {
+        try {
+            const res = await axios.get(`${BASE_URL}/user/location`, {
+                params: { user_id: userId },
+            });
+
+            console.log("GET /user/location response:", res.data);
+
+            const { latitude, longitude } = res.data || {};
+            if (latitude == null || longitude == null) {
+                console.log("Backend has no location yet");
+                return;
+            }
+
+            const coords = { latitude, longitude };
+            setLocation(coords);
+
+            if (mapRef.current) {
+                mapRef.current.animateToRegion(
+                    { ...coords, latitudeDelta: 0.01, longitudeDelta: 0.01 },
+                    1000
+                );
+            }
+        } catch (err) {
+            console.log(
+                "Could not fetch backend location:",
+                err.response?.data || err.message
+            );
+        }
+    };
+
+
+
+
+
+
+    useEffect(() => {
+        // if userId is missing, don't call the API
+        if (!userId) {
+            console.log("No userId yet, skipping /user/location");
+            return;
+        }
+
+        const interval = setInterval(() => {
+            fetchBackendLocation();
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, [userId]); // 👈 depend on userId
 
 
 
@@ -61,17 +126,14 @@ export default function MapComponent({ userId  }) {
         if (searchRef.current) {
             searchRef.current.setAddressText(name);
         }
+
         setMapSearchQuery(name);   // keep text input in sync
-
         await selectFirstPlaceForText(name);  // does the actual Google lookup + handlePlaceSelect
+
+
+
+
     };
-
-
-
-
-
-    const BASE_URL =
-        Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
     const sendLocationToBackend = async (coords) => {
         try {
             const response = await axios.post(`${BASE_URL}/map/location`, {
@@ -145,7 +207,7 @@ export default function MapComponent({ userId  }) {
                 setLoading(false);
 
                 // send to backend
-                sendLocationToBackend(coords);
+                updateUserLocation(coords);  // 👈 use PUT /user/location instead
             },
             (error) => {
                 console.log("Geolocation error:", error);
@@ -243,41 +305,44 @@ export default function MapComponent({ userId  }) {
         // optional: POST/PUT to backend here
     };
 
-    useEffect(() => {
-        const requestLocationPermission = async () => {
-            if (Platform.OS === 'android') {
-                try {
-                    const granted = await PermissionsAndroid.request(
-                        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-                        {
-                            title: 'Location Permission',
-                            message: 'This app needs access to your location',
-                            buttonPositive: 'OK',
+
+
+
+        useEffect(() => {
+            const requestLocationPermission = async () => {
+                if (Platform.OS === 'android') {
+                    try {
+                        const granted = await PermissionsAndroid.request(
+                            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+                            {
+                                title: 'Location Permission',
+                                message: 'This app needs access to your location',
+                                buttonPositive: 'OK',
+                            }
+                        );
+                        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+                            console.log('Location permission granted');
+                            getCurrentLocation();
+                        } else {
+                            console.log('Location permission denied');
+                            setError('Location permission denied');
+                            setLoading(false);
                         }
-                    );
-                    if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-                        console.log('Location permission granted');
-                        getCurrentLocation();
-                    } else {
-                        console.log('Location permission denied');
-                        setError('Location permission denied');
+                    } catch (err) {
+                        console.warn(err);
+                        setError('Permission error: ' + err.message);
                         setLoading(false);
                     }
-                } catch (err) {
-                    console.warn(err);
-                    setError('Permission error: ' + err.message);
-                    setLoading(false);
+                } else {
+                    getCurrentLocation();
                 }
-            } else {
-                getCurrentLocation();
-            }
-        };
+            };
 
 
 
 
-        requestLocationPermission();
-    }, []);
+            requestLocationPermission();
+        }, []);
 
 
 
@@ -348,7 +413,6 @@ export default function MapComponent({ userId  }) {
 
 
         console.log("Selected location:", newLocation);
-        sendLocationToBackend(newLocation);
 
 
 
@@ -512,23 +576,35 @@ export default function MapComponent({ userId  }) {
                     )}
 
                     <Marker
-                        coordinate={location}
+                        coordinate={{
+                            latitude: location.latitude,
+                            longitude: location.longitude,
+                        }}
                         title="Your Location"
                         description="You are here"
                         pinColor="blue"
                     />
+
                     {selectedLocation && (
                         <Marker
-                            coordinate={selectedLocation}
-                            title="Selected Location"
+                            coordinate={{
+                                latitude: selectedLocation.latitude,
+                                longitude: selectedLocation.longitude
+                            }}
+                            title={selectedLocation.name || "Selected Location"}
+                            description={selectedLocation.address || ""}
                             pinColor="red"
                         />
                     )}
+
+
                 </MapView>
             ) : null}
         </View>
     );
 }
+
+
 
 
 

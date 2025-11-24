@@ -125,7 +125,10 @@ const ACTIVITY_CONFIG = {
 };
 
 
-export default function UserPreferencesScreen({userId}) {
+export default function UserPreferencesScreen({ route }) {
+    const { userId, email } = route.params;
+
+
     const navigation = useNavigation();
     const [env, setEnv] = React.useState('');
     const [time, setTime] = React.useState(new Date());

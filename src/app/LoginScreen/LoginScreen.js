@@ -6,10 +6,11 @@ import {
     KeyboardAvoidingView,
     Platform,
     TouchableWithoutFeedback,
-    Keyboard, Alert,
+    Keyboard,
 } from 'react-native';
 import styled from 'styled-components/native';
-import { TextInput, Button, Text } from 'react-native-paper';
+import { TextInput, Button, Text, Portal, Dialog } from 'react-native-paper';
+
 const Container = styled(SafeAreaView)`
     flex: 1;
     background-color: #dbbdab;
@@ -92,6 +93,10 @@ export function LoginScreen({ navigation }) {
     const [secure, setSecure] = useState(true);
     const [loading, setLoading] = useState(false);
 
+    // 🔔 error modal state
+    const [errorVisible, setErrorVisible] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+
     const handleLogin = async () => {
         setLoading(true);
         try {
@@ -100,33 +105,41 @@ export function LoginScreen({ navigation }) {
                 password,
             });
 
-            console.log("Login response:", response.data);
-
-            const { user_id, email: userEmail } = response.data;
-
-            // Just to confirm:
-            console.log("Logged in user_id:", user_id);
-
-            Alert.alert("Login successful!");
+            const { user_id, email: returnedEmail } = response.data;
 
             navigation.navigate('UserPreferencesScreen', {
                 userId: user_id,
+                email: returnedEmail,
             });
-
-        } catch (error) {
+        }
+        catch (error) {
             console.log("Login error:", error?.response?.data || error.message);
 
+            let message = "Login failed";
+
             if (error.response) {
-                Alert.alert(error.response.data.detail || "Login failed");
+                const detail = error.response.data.detail;
+
+                if (typeof detail === "string") {
+                    message = detail;
+                } else if (Array.isArray(detail)) {
+                    // FastAPI validation errors
+                    message = detail
+                        .map(item => item.msg || JSON.stringify(item))
+                        .join("\n");
+                } else if (detail && typeof detail === "object") {
+                    message = JSON.stringify(detail);
+                }
             } else {
-                Alert.alert("Could not reach server");
+                message = "Could not reach server";
             }
+
+            setErrorMessage(message);
+            setErrorVisible(true);
         } finally {
             setLoading(false);
         }
     };
-
-
 
     return (
         <Container>
@@ -179,13 +192,11 @@ export function LoginScreen({ navigation }) {
                                 onPress={handleLogin}
                                 loading={loading}
                                 disabled={loading || !email || !password}
-                                style={{ borderRadius: 12, paddingVertical: 4, bottom: -40}}
+                                style={{ borderRadius: 12, paddingVertical: 4, bottom: -40 }}
                                 buttonColor="#6f4b63"
                             >
                                 Log In
                             </Button>
-
-
                         </Card>
 
                         <Footer>
@@ -196,6 +207,24 @@ export function LoginScreen({ navigation }) {
                                 </FooterLink>
                             </FooterText>
                         </Footer>
+
+                        {/* 🔔 Error Modal */}
+                        <Portal>
+                            <Dialog
+                                visible={errorVisible}
+                                onDismiss={() => setErrorVisible(false)}
+                            >
+                                <Dialog.Title>Login error</Dialog.Title>
+                                <Dialog.Content>
+                                    <Text>{errorMessage}</Text>
+                                </Dialog.Content>
+                                <Dialog.Actions>
+                                    <Button onPress={() => setErrorVisible(false)}>
+                                        OK
+                                    </Button>
+                                </Dialog.Actions>
+                            </Dialog>
+                        </Portal>
                     </Inner>
                 </TouchableWithoutFeedback>
             </KeyboardAvoidingView>

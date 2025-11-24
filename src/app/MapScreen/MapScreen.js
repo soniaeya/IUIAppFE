@@ -16,7 +16,7 @@ import axios from "axios";
 const highlight = "#6f4b63"
 
 export default function MapScreen({ route, navigation }) {
-    const { userId, email} = route.params;  // 👈 comes from LoginScreen
+    const { userId, email } = route.params || {};
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedDestination, setSelectedDestination] = useState(null);
 
@@ -31,10 +31,13 @@ export default function MapScreen({ route, navigation }) {
 
 
 
-    const handleNavigationToPreferencesScreen = async () => {
-            navigation.navigate(UserPreferencesScreen);
+    const handleNavigationToPreferencesScreen = () => {
+        navigation.navigate("UserPreferencesScreen", {
+            userId,
+            email,
+        });
+    };
 
-        };
 
 
 
