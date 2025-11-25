@@ -168,18 +168,14 @@ export default function RecommendationBox({
             <StarRatingModal
                 visible={ratingModalVisible}
                 initialValue={currentRating || 0}
-                userId={userId}               // from login / backend
-                gymName={selectedLocation.name}      // e.g. selected recommendation
-                onSubmit={async (value) => {
-                    const id = selectedLocation?.placeId;
-                    if (!id) {
-                        console.warn("No placeId for selected location, skipping rating save.");
-                        return;
-                    }
-                    onSetRating(id, value);  // ✅ correct
-                }}
+                userId={userId}
+                placeId={selectedLocation?.placeId}     // MUST be Google ID
+                gymName={selectedLocation?.name}        // MUST be a string
+                onSubmit={(value) => onSetRating(selectedLocation.placeId, value)}
                 onClose={() => setRatingModalVisible(false)}
             />
+
+
 
 
 

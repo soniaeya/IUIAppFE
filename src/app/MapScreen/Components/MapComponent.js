@@ -408,12 +408,18 @@ export default function MapComponent({ userId  }) {
         await selectFirstPlaceForText(name);  // this will update selectedLocation
     };
 
+    const handleSetRating = (placeId, value) => {
+        setRatings(prev => ({
+            ...prev,
+            [placeId]: value,
+        }));
+    };
 
-    const skipClosed = async (idx) => {
+    const skipClosed = async (startIdx, step) => {
         if (!recommendations.length) return;
 
         let tries = 0;
-        let currentIndex = idx;
+        let currentIndex = startIdx;
 
         while (tries < recommendations.length) {
             const name = recommendations[currentIndex];
@@ -421,7 +427,7 @@ export default function MapComponent({ userId  }) {
             // this already calls handlePlaceSelect and sets selectedLocation
             const details = await selectFirstPlaceForText(name);
             if (!details) {
-                currentIndex = (currentIndex + 1) % recommendations.length;
+                currentIndex = (currentIndex + step + recommendations.length) % recommendations.length;
                 tries++;
                 continue;
             }
@@ -435,32 +441,48 @@ export default function MapComponent({ userId  }) {
                 return;
             }
 
-            // try next one
-            currentIndex = (currentIndex + 1) % recommendations.length;
+            // try next candidate in the given direction
+            currentIndex = (currentIndex + step + recommendations.length) % recommendations.length;
             tries++;
         }
     };
 
 
+
     const handleNextRecommendation = async () => {
-        await goToIndex(currentIdx + 1);
+        await skipClosed(currentIdx + 1, +1);   // move forward
     };
 
     const handlePrevRecommendation = async () => {
-        await goToIndex(currentIdx - 1);
-    };
-    const handleSetRating = (placeId, value) => {
-        setRatings(prev => ({
-            ...prev,
-            [placeId]: value,
-        }));
-        // optional: POST/PUT to backend here
+        await skipClosed(currentIdx - 1, -1);   // move backward
     };
 
 
+    useEffect(() => {
+        if (!userId) return;
+
+        const fetchRatings = async () => {
+            try {
+                const res = await axios.get(`${BASE_URL}/api/ratings/`, {
+                    params: { user_id: userId },
+                });
+
+                // backend returns { ratings: { placeId: value, ... } }
+                setRatings(res.data?.ratings || {});
+                console.log("Loaded ratings from backend:", res.data?.ratings);
+            } catch (err) {
+                console.log(
+                    "Error loading ratings:",
+                    err.response?.data || err.message
+                );
+            }
+        };
+
+        fetchRatings();
+    }, [userId, BASE_URL]);
 
 
-        useEffect(() => {
+    useEffect(() => {
             const requestLocationPermission = async () => {
                 if (Platform.OS === 'android') {
                     try {
@@ -690,17 +712,17 @@ export default function MapComponent({ userId  }) {
             </View>
 
             <RecommendationBox
-                key={recUiVersion}              // 👈 force remount on time change
+                key={recUiVersion}
                 expanded={recExpanded}
                 userId={userId}
                 selectedLocation={selectedLocation}
-                onNextRecommendation={() => skipClosed(currentIdx + 1)}
-
-                onPrevRecommendation={() => skipClosed(currentIdx - 1)}
+                onNextRecommendation={handleNextRecommendation}
+                onPrevRecommendation={handlePrevRecommendation}
                 ratings={ratings}
                 onSetRating={handleSetRating}
                 setExpanded={setRecExpanded}
             />
+
 
             {location ? (
                 <MapView

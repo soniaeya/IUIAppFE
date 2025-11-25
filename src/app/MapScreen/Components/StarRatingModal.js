@@ -10,10 +10,11 @@ const BASE_URL =
     Platform.OS === "android" ? "http://10.0.2.2:8000" : "http://localhost:8000";
 
 // --------- API helper to send rating to FastAPI ----------
-async function sendRating(userId, gymName, ratingValue) {
+async function sendRating(userId, placeId, gymName, ratingValue) {
     try {
         await axios.post(`${BASE_URL}/api/ratings/`, {
             user_id: userId,
+            place_id: placeId,     // ✅ now comes from arg
             gym_name: gymName,
             rating: ratingValue,
         });
@@ -22,6 +23,7 @@ async function sendRating(userId, gymName, ratingValue) {
         console.error("Error saving rating", err.response?.data || err.message);
     }
 }
+
 
 const Backdrop = styled.View`
   flex: 1;
@@ -114,11 +116,13 @@ export default function StarRatingModal({
                                             initialValue = 0,
                                             title = "Rate this place",
                                             subtitle = "Tap a star from 1 to 5",
-                                            userId,         // ⭐ NEW
-                                            gymName,        // ⭐ NEW
-                                            onSubmit,       // still optional callback for parent
+                                            userId,      // ⭐
+                                            placeId,     // ⭐ NEW
+                                            gymName,     // ⭐
+                                            onSubmit,
                                             onClose,
-                                        }) {
+                                        })
+{
     const [rating, setRating] = useState(initialValue);
 
     useEffect(() => {
@@ -128,17 +132,14 @@ export default function StarRatingModal({
     }, [visible, initialValue]);
 
     const handleConfirm = async () => {
-        // 1) send to backend if we have enough info
-        if (userId && gymName && rating > 0) {
-            await sendRating(userId, gymName, rating);
+        if (userId && placeId && gymName && rating > 0) {
+            await sendRating(userId, placeId, gymName, rating);
         }
 
-        // 2) bubble up rating to parent if they provided a callback
         if (onSubmit) onSubmit(rating);
-
-        // 3) close modal
-        if (onClose) onClose();
+        onClose?.();
     };
+
 
     return (
         <Modal transparent visible={visible} animationType="fade">
