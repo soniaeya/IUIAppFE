@@ -21,6 +21,16 @@ export default function MapScreen() {
 
     const { userId, email } = route.params ?? {};
 
+    const handleLogout = () => {
+        console.log("Logging out...");
+
+        navigation.reset({
+            index: 0,
+            routes: [{ name: "LoginScreen" }],   // 👈 sends user back to Login screen
+        });
+    };
+
+
     const handleNavigationToPreferencesScreen = () => {
         if (!userId) {
             console.log("⚠️ No userId when trying to go to UserPreferencesScreen");
@@ -48,6 +58,18 @@ export default function MapScreen() {
                 }}
                 onPress={handleNavigationToPreferencesScreen}
             />
+            <MaterialDesignIcons
+                name="logout"
+                color={"#454545"}
+                size={60}
+                style={{
+                    position: "absolute",
+                    left: "2%",       // 🔥 opposite side from preferences
+                    bottom: "3%",
+                }}
+                onPress={handleLogout}
+            />
+
         </View>
     );
 }
