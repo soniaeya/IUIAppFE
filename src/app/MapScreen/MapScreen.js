@@ -2,67 +2,56 @@ import React, { useState } from 'react';
 
 import {
     View,
-    StyleSheet, Text,
+    StyleSheet,
 
 } from 'react-native';
 import MapComponent from "./Components/MapComponent";
-import {Button, DataTable, Dialog, List, Portal} from 'react-native-paper';
 import MaterialDesignIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import UserPreferencesScreen from "../UserPreferenceScreen/UserPreferencesScreen";
-import {useNavigation} from "@react-navigation/native";
+
 import axios from "axios";
 
 
-const highlight = "#6f4b63"
 
-export default function MapScreen({ route, navigation }) {
-    const { userId, email } = route.params || {};
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedDestination, setSelectedDestination] = useState(null);
+import { useRoute, useNavigation } from "@react-navigation/native";
 
+export default function MapScreen() {
+    const route = useRoute();
+    const navigation = useNavigation();
 
-
-
-
-    const [returnTorPreferencesScreen] = useState(false);
-    const [location, setLocation] = useState(null);
-
-
-
-
+    const { userId, email } = route.params ?? {};
 
     const handleNavigationToPreferencesScreen = () => {
+        if (!userId) {
+            console.log("⚠️ No userId when trying to go to UserPreferencesScreen");
+        }
+        console.log("MapScreen params:", route.params);
+
         navigation.navigate("UserPreferencesScreen", {
             userId,
             email,
         });
     };
 
-
-
-
     return (
         <View style={styles.container}>
             <MapComponent userId={userId} />
 
-
             <MaterialDesignIcons
-
                 name="account-circle-outline"
                 color={"#454545"}
                 size={60}
                 style={{
-                    position: 'absolute',
-                    right: '2%',
-                    bottom: '3%',
+                    position: "absolute",
+                    right: "2%",
+                    bottom: "3%",
                 }}
                 onPress={handleNavigationToPreferencesScreen}
-
             />
-
         </View>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: {

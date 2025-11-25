@@ -1,17 +1,20 @@
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {View, StyleSheet, PermissionsAndroid, Platform, ActivityIndicator, Text, TouchableOpacity} from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import axios from "axios";
 import RecommendationBox from "./RecommendationBox";
+import {gs} from "../../theme/GlobalStyles";
 
 
 export default function MapComponent({ userId  }) {
     const BASE_URL =
         Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
-
+    const hasFetchedOnce = useRef(false);
+    const [recUiVersion, setRecUiVersion] = useState(0);  // controls rec UI reset
+    const [recExpanded, setRecExpanded] = useState(false);
     const [location, setLocation] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -31,9 +34,31 @@ export default function MapComponent({ userId  }) {
     const [showWeatherModal, setShowWeatherModal] = useState(false);
     const [weatherInfo, setWeatherInfo] = useState(null);
 
+    const [locationPopupVisible, setLocationPopupVisible] = useState(false);
+// ⏰ time change modal state
+    const [timeChangeModalVisible, setTimeChangeModalVisible] = useState(false);
+    const [lastTimeString, setLastTimeString] = useState("");
+    const [currentTimeString, setCurrentTimeString] = useState("");
 
 
     const [weatherLocked, setWeatherLocked] = useState(false);  // when true, API won't overwrite
+
+// ⏰ Format a Date into HH:MM (24h or 12h depending on device)
+    const formatTime = (date) =>
+        date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+// ⏰ Detect device time jumps
+
+    useEffect(() => {
+        if (!userId) return;
+
+        const loadInitialLocation = async () => {
+            if (location) return;          // don't override device GPS
+            await fetchBackendLocation();  // maybe center on last saved location ONCE
+        };
+
+        loadInitialLocation();
+    }, [userId]);        // <- no selectedLocation, no interval
+// ⏰ Detect device time jumps
 
 
 
@@ -45,29 +70,71 @@ export default function MapComponent({ userId  }) {
             temp: 12,
         });
     }, []);
+    const fetchRecommendations = useCallback(async () => {
+        if (!userId) return;
 
+        try {
+            const res = await axios.get(`${BASE_URL}/recommendations`, {
+                params: { user_id: userId },
+            });
+
+            setRecommendations(res.data.recommendations || []);
+        } catch (err) {
+            if (err.response?.status === 400) {
+                console.log("➡️ Preferences not set yet. Skipping recommendations.");
+                return;
+            }
+            console.error(
+                "Error fetching recommendations",
+                err.response?.data || err.message
+            );
+        }
+    }, [userId, BASE_URL]);
 
 
     useEffect(() => {
-        if (!userId) return;
-
-        const fetchRecommendations = async () => {
-            try {
-                const res = await axios.get("http://10.0.2.2:8000/recommendations");
-                setRecommendations(res.data.gyms || []);
-            } catch (err) {
-                if (err.response?.status === 400) {
-                    console.log("➡️ Preferences not set yet. Skipping recommendations.");
-                    return;
-                }
-                console.error("Error fetching recommendations", err);
-            }
-        };
-
         fetchRecommendations();
-    }, [userId]);
+    }, [fetchRecommendations]);
 
 
+    useEffect(() => {
+        // start with "now" as baseline
+        let previous = new Date();
+        setCurrentTimeString(formatTime(previous));
+
+        const interval = setInterval(() => {
+            const now = new Date();
+            const diffMs = Math.abs(now.getTime() - previous.getTime());
+
+            // We expect ~5000 ms between ticks.
+            if (diffMs > 15000) { // 15 seconds threshold
+                setLastTimeString(formatTime(previous));
+                setCurrentTimeString(formatTime(now));
+                setTimeChangeModalVisible(true);
+
+                // 🔁 re-fetch recommendations when time changes
+                fetchRecommendations();
+
+                // 🔄 reset / change RecommendationBox open/closed UI
+                setRecExpanded(true);
+                setRecUiVersion(v => v + 1);
+
+                // ✅ recompute open/closed for the currently selected place
+                setSelectedLocation(prev => {
+                    if (!prev) return prev;
+                    const updatedIsOpenNow = checkIfOpen(prev.rawPeriods, new Date());
+                    return {
+                        ...prev,
+                        isOpenNow: updatedIsOpenNow,
+                    };
+                });
+            }
+
+            previous = now;
+        }, 5000); // check every 5 seconds
+
+        return () => clearInterval(interval);
+    }, [fetchRecommendations]);
 
 
     const fetchBackendLocation = async () => {
@@ -106,19 +173,8 @@ export default function MapComponent({ userId  }) {
 
 
 
-    useEffect(() => {
-        // if userId is missing, don't call the API
-        if (!userId) {
-            console.log("No userId yet, skipping /user/location");
-            return;
-        }
 
-        const interval = setInterval(() => {
-            fetchBackendLocation();
-        }, 5000);
 
-        return () => clearInterval(interval);
-    }, [userId]); // 👈 depend on userId
 
 
 
@@ -133,21 +189,6 @@ export default function MapComponent({ userId  }) {
 
 
 
-    };
-    const sendLocationToBackend = async (coords) => {
-        try {
-            const response = await axios.post(`${BASE_URL}/map/location`, {
-                latitude: coords.latitude,
-                longitude: coords.longitude,
-            });
-
-            console.log("Location sent to backend:", response.data);
-        } catch (err) {
-            console.log(
-                "Error sending location:",
-                err.response?.data || err.message
-            );
-        }
     };
 
 
@@ -188,35 +229,82 @@ export default function MapComponent({ userId  }) {
         return `🌤️ Current weather: ${main || "Unknown"}`;
     };
     const updateUserLocation = async (coords) => {
-        await axios.put(`${BASE_URL}/user/location`, {
-            user_id: userId,
-            location: coords,
-        });
-
+        try {
+            await axios.put(`${BASE_URL}/user/location`, {
+                user_id: userId,
+                location: coords,
+            });
+            console.log("User location updated in backend:", coords);
+        } catch (err) {
+            console.log(
+                "Error updating backend location:",
+                err.response?.data || err.message
+            );
+        }
     };
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            getCurrentLocation();   // check device location every 5 sec
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, []);
+
 
     const getCurrentLocation = () => {
         Geolocation.getCurrentPosition(
             (position) => {
-                console.log("Location retrieved:", position.coords);
                 const { latitude, longitude } = position.coords;
-
                 const coords = { latitude, longitude };
 
-                setLocation(coords);
-                setLoading(false);
+                console.log("📍 Device GPS:", coords);
 
-                // send to backend
-                updateUserLocation(coords);  // 👈 use PUT /user/location instead
+                setLocation((prev) => {
+                    const isFirstTime = !hasFetchedOnce.current;
+
+                    // Mark that we have now fetched at least once
+                    hasFetchedOnce.current = true;
+
+                    const locationChanged =
+                        !prev ||
+                        prev.latitude !== coords.latitude ||
+                        prev.longitude !== coords.longitude;
+
+                    // Show popup ONLY if location changed AND it's not the first reading
+                    if (!isFirstTime && locationChanged) {
+                        console.log("🔄 Location changed");
+                        updateUserLocation(coords);
+                        setLocationPopupVisible(true);
+                    } else if (locationChanged) {
+                        // First time: update backend but don't show popup
+                        console.log("✨ First location update (no popup)");
+                        updateUserLocation(coords);
+                    }
+
+                    return coords;
+                });
+
+                setLoading(false);
             },
+
             (error) => {
-                console.log("Geolocation error:", error);
+                console.log("❌ Geolocation error:", error);
                 setError(`Location error: ${error.message}`);
                 setLoading(false);
             },
-            { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
+
+            {
+                enableHighAccuracy: true,
+                timeout: 20000,
+                maximumAge: 0,
+                distanceFilter: 0,
+                forceRequestLocation: true,
+                showLocationDialog: true,
+            }
         );
     };
+
 
 
 
@@ -275,6 +363,38 @@ export default function MapComponent({ userId  }) {
         }
     };
 
+    function checkIfOpen(periods, now) {
+        if (!periods || !Array.isArray(periods)) return false;
+
+        const day = now.getDay(); // 0=Sun...6=Sat
+        const time = now.getHours() * 100 + now.getMinutes(); // HHMM
+
+        for (const p of periods) {
+            const open = p.open;
+            const close = p.close;
+
+            if (!open || open.day == null) continue;
+
+            // match today
+            if (open.day !== day) continue;
+
+            const openTime = parseInt(open.time);   // "0930" → 930
+            const closeTime = parseInt(close?.time || "2359");
+
+            // normal same-day closing
+            if (time >= openTime && time < closeTime) return true;
+
+            // handle after-midnight closure
+            if (close && close.day !== open.day) {
+                // example: open 18:00, close next day 02:00
+                if (time >= openTime || time < parseInt(close.time)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 
 
 
@@ -288,6 +408,38 @@ export default function MapComponent({ userId  }) {
         await selectFirstPlaceForText(name);  // this will update selectedLocation
     };
 
+
+    const skipClosed = async (idx) => {
+        if (!recommendations.length) return;
+
+        let tries = 0;
+        let currentIndex = idx;
+
+        while (tries < recommendations.length) {
+            const name = recommendations[currentIndex];
+
+            // this already calls handlePlaceSelect and sets selectedLocation
+            const details = await selectFirstPlaceForText(name);
+            if (!details) {
+                currentIndex = (currentIndex + 1) % recommendations.length;
+                tries++;
+                continue;
+            }
+
+            const periods = details.opening_hours?.periods || [];
+            const isOpen = checkIfOpen(periods, new Date());   // ✅ device time
+
+            if (isOpen) {
+                setCurrentIdx(currentIndex);
+                // handlePlaceSelect already ran inside selectFirstPlaceForText
+                return;
+            }
+
+            // try next one
+            currentIndex = (currentIndex + 1) % recommendations.length;
+            tries++;
+        }
+    };
 
 
     const handleNextRecommendation = async () => {
@@ -356,6 +508,7 @@ export default function MapComponent({ userId  }) {
         return `${streetNumber} ${route}`.trim().replace(/^, /, '');
     };
     const handlePlaceSelect = (data, details) => {
+
         const placeId = details.place_id;
         const shortAddress = getShortAddress(details);
 
@@ -364,6 +517,11 @@ export default function MapComponent({ userId  }) {
             const photoRef = details.photos[0].photo_reference;
             photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference=${photoRef}&key=AIzaSyDgne1zVrGt-GIf8s2ayoNs6kE3O4iVUXc`;
         }
+        const periods = details.opening_hours?.periods || [];
+        const deviceDate = new Date();  // actual device time
+
+// compute if open using device time
+        const recomputedOpen = checkIfOpen(periods, deviceDate);
 
 
         // Postal code (H2X 1K4 → prefix H2X if you want)
@@ -397,23 +555,24 @@ export default function MapComponent({ userId  }) {
             latitude: lat,
             longitude: lng,
             photo: photoUrl,
-            name: details.name,                                   // "UNDERDOG BOXING GYM"
-            address: shortAddress,                 // full address
-            phone: details.formatted_phone_number,                // "(514) 843-5164"
-            website: details.website,                             // gym site
-            rating: details.rating,                               // 4.6
-            totalRatings: details.user_ratings_total,             // 70
-            isOpenNow,
+            name: details.name,
+            address: shortAddress,
+            phone: details.formatted_phone_number,
+            website: details.website,
+            rating: details.rating,
+            totalRatings: details.user_ratings_total,
+            isOpenNow: recomputedOpen,
             todaysHours,
             postalCode,
             placeId,
+            rawPeriods: details.opening_hours?.periods || []
         });
 
 
 
 
-        console.log("Selected location:", newLocation);
 
+        console.log("Selected location:", newLocation);
 
 
         if (mapRef.current) {
@@ -530,18 +689,18 @@ export default function MapComponent({ userId  }) {
 
             </View>
 
-
             <RecommendationBox
-            selectedLocation={selectedLocation}
-            onNextRecommendation={handleNextRecommendation}
-            onPrevRecommendation={handlePrevRecommendation}
-            ratings={ratings}
-            onSetRating={handleSetRating}
+                key={recUiVersion}              // 👈 force remount on time change
+                expanded={recExpanded}
+                userId={userId}
+                selectedLocation={selectedLocation}
+                onNextRecommendation={() => skipClosed(currentIdx + 1)}
+
+                onPrevRecommendation={() => skipClosed(currentIdx - 1)}
+                ratings={ratings}
+                onSetRating={handleSetRating}
+                setExpanded={setRecExpanded}
             />
-
-
-
-
 
             {location ? (
                 <MapView
@@ -556,24 +715,7 @@ export default function MapComponent({ userId  }) {
                     showsUserLocation={true}
                     followsUserLocation={true}
                 >
-                    {showWeatherModal && (
-                        <View style={styles.modalOverlay}>
-                            <View style={styles.modalBox}>
-                                <Text style={styles.modalTitle}>🌧️ Rain Alert</Text>
-                                <Text style={styles.modalText}>
-                                    It's currently raining in your area.
-                                    You may prefer **Indoor** activities today.
-                                </Text>
 
-                                <TouchableOpacity
-                                    style={styles.modalButton}
-                                    onPress={() => setShowWeatherModal(false)}
-                                >
-                                    <Text style={{ color: "white", fontWeight: "bold" }}>OK</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    )}
 
                     <Marker
                         coordinate={{
@@ -600,6 +742,62 @@ export default function MapComponent({ userId  }) {
 
                 </MapView>
             ) : null}
+            {showWeatherModal && (
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalBox}>
+                        <Text style={styles.modalTitle}>🌧️ Rain Alert</Text>
+                        <Text style={styles.modalText}>
+                            It's currently raining in your area.
+                            You may prefer **Indoor** activities today.
+                        </Text>
+
+                        <TouchableOpacity
+                            style={styles.modalButton}
+                            onPress={() => setShowWeatherModal(false)}
+                        >
+                            <Text style={{ color: "white", fontWeight: "bold" }}>OK</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
+
+
+            {timeChangeModalVisible && (
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalBox}>
+                        <Text style={styles.modalTitle}>Time Updated</Text>
+                        <Text style={styles.modalText}>
+                            Device time changed from {lastTimeString || "previous time"} to{" "}
+                            {currentTimeString || "current time"}.
+                        </Text>
+
+                        <TouchableOpacity
+                            style={styles.modalButton}
+                            onPress={() => setTimeChangeModalVisible(false)}
+                        >
+                            <Text style={{ color: "white", fontWeight: "bold" }}>OK</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
+
+            {locationPopupVisible && (
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalBox}>
+                        <Text style={styles.modalTitle}>Location Updated</Text>
+                        <Text style={styles.modalText}>
+                            Your current location has been updated from your device.
+                        </Text>
+
+                        <TouchableOpacity
+                            style={styles.modalButton}
+                            onPress={() => setLocationPopupVisible(false)}
+                        >
+                            <Text style={{ color: "white", fontWeight: "bold" }}>OK</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
         </View>
     );
 }
@@ -644,5 +842,42 @@ const styles = StyleSheet.create({
         color: 'red',
         textAlign: 'center',
         padding: 20,
+    },
+    modalOverlay: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0,0,0,0)",
+        justifyContent: "center",
+        alignItems: "center",
+
+    },
+    modalBox: {
+        marginTop: -80,
+        width: "80%",
+        backgroundColor: "white",
+        borderRadius: 16,
+        padding: 20,
+        zIndex:999,
+        borderColor: "grey",
+        borderWidth: 1,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: "bold",
+        marginBottom: 8,
+    },
+    modalText: {
+        fontSize: 14,
+        marginBottom: 16,
+    },
+    modalButton: {
+        alignSelf: "flex-end",
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 8,
+        backgroundColor: "#6f4b63",
     },
 });

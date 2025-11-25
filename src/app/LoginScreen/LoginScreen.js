@@ -99,11 +99,14 @@ export function LoginScreen({ navigation }) {
 
     const handleLogin = async () => {
         setLoading(true);
-        try {
+
+        try
+        {
             const response = await axios.post("http://10.0.2.2:8000/login", {
                 email,
                 password,
             });
+            console.log(response.data)
 
             const { user_id, email: returnedEmail } = response.data;
 

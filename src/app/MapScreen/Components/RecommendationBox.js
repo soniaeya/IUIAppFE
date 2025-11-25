@@ -5,11 +5,13 @@ import React, {useEffect, useState} from "react";
 const background_color = "white";
 import StarRatingModal from "./StarRatingModal";
 export default function RecommendationBox({
+                                              userId,
                                               selectedLocation,
                                               onNextRecommendation,
                                               onPrevRecommendation,
                                               ratings,
                                               onSetRating,
+                                              expanded, setExpanded
                                           })
 
 {
@@ -27,7 +29,10 @@ export default function RecommendationBox({
                     bottom: -445,
                     zIndex: 999,
                 }}
-                onPress={onNextRecommendation}
+                onPress={() => {
+                    onNextRecommendation();
+                    setExpanded(prev => !prev);   // or !expanded if you prefer
+                }}
             />
 
             {/* PREV */}
@@ -40,7 +45,10 @@ export default function RecommendationBox({
                     bottom: -445,
                     zIndex: 999,
                 }}
-                onPress={onPrevRecommendation}
+                onPress={() => {
+                    onPrevRecommendation();
+                    setExpanded(prev => !prev);   // or !expanded if you prefer
+                }}
             />
 
         </EmptyRecommendationContainer>)
@@ -49,10 +57,41 @@ export default function RecommendationBox({
     const currentRating = ratings[selectedLocation?.placeId] || 0;
 
 
+    if (selectedLocation && selectedLocation.isOpenNow === false) {
+        return (
+            <EmptyRecommendationContainer>
+                {/* You can show arrows so the user can skip closed ones */}
+                <MaterialDesignIcons
+                    name="chevron-right"
+                    size={40}
+                    style={{
+                        position: "absolute",
+                        right: 0,
+                        bottom: -445,
+                        zIndex: 999,
+                    }}
+                    onPress={onNextRecommendation}
+                />
+
+                <MaterialDesignIcons
+                    name="chevron-left"
+                    size={40}
+                    style={{
+                        position: "absolute",
+                        left: 0,
+                        bottom: -445,
+                        zIndex: 999,
+                    }}
+                    onPress={onPrevRecommendation}
+                />
+            </EmptyRecommendationContainer>
+        );
+    }
 
 
     return (
         <RecommendationContainer style={{zIndex: 999, height: 300}}>
+
             <MaterialDesignIcons
                 name="chevron-right"
                 size={40}
@@ -78,7 +117,7 @@ export default function RecommendationBox({
                 onPress={onPrevRecommendation}
             />
 
-            <RecommendationInfoContainer style={{zIndex: 999, marginTop: 35}}>
+                <RecommendationInfoContainer style={{zIndex: 999, marginTop: 35}}>
                 <GymTitle>{selectedLocation.name}</GymTitle>
 
                 <StatsContainer>
@@ -129,6 +168,8 @@ export default function RecommendationBox({
             <StarRatingModal
                 visible={ratingModalVisible}
                 initialValue={currentRating || 0}
+                userId={userId}               // from login / backend
+                gymName={selectedLocation.name}      // e.g. selected recommendation
                 onSubmit={async (value) => {
                     const id = selectedLocation?.placeId;
                     if (!id) {

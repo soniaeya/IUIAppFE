@@ -1,9 +1,27 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Modal, Animated, TouchableOpacity } from "react-native";
+import { Modal, Animated, TouchableOpacity, Platform } from "react-native";
 import styled from "styled-components/native";
 import MaterialIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import axios from "axios";
 
 const highlight = "#6f4b63";
+
+const BASE_URL =
+    Platform.OS === "android" ? "http://10.0.2.2:8000" : "http://localhost:8000";
+
+// --------- API helper to send rating to FastAPI ----------
+async function sendRating(userId, gymName, ratingValue) {
+    try {
+        await axios.post(`${BASE_URL}/api/ratings/`, {
+            user_id: userId,
+            gym_name: gymName,
+            rating: ratingValue,
+        });
+        console.log("Rating saved!");
+    } catch (err) {
+        console.error("Error saving rating", err.response?.data || err.message);
+    }
+}
 
 const Backdrop = styled.View`
   flex: 1;
@@ -13,53 +31,53 @@ const Backdrop = styled.View`
 `;
 
 const Box = styled.View`
-  width: 80%;
-  background-color: white;
-  border-radius: 20px;
-  padding: 20px;
-  align-items: center;
+    width: 80%;
+    background-color: white;
+    border-radius: 20px;
+    padding: 20px;
+    align-items: center;
 `;
 
 const Title = styled.Text`
-  font-size: 20px;
-  font-weight: 700;
-  color: ${highlight};
-  margin-bottom: 8px;
+    font-size: 20px;
+    font-weight: 700;
+    color: ${highlight};
+    margin-bottom: 8px;
 `;
 
 const Subtitle = styled.Text`
-  font-size: 14px;
-  color: ${highlight};
-  margin-bottom: 16px;
+    font-size: 14px;
+    color: ${highlight};
+    margin-bottom: 16px;
 `;
 
 const StarsRow = styled.View`
-  flex-direction: row;
-  justify-content: center;
-  margin-bottom: 16px;
+    flex-direction: row;
+    justify-content: center;
+    margin-bottom: 16px;
 `;
 
 const ButtonsRow = styled.View`
-  flex-direction: row;
-  justify-content: flex-end;
-  width: 100%;
-  margin-top: 8px;
+    flex-direction: row;
+    justify-content: flex-end;
+    width: 100%;
+    margin-top: 8px;
 `;
 
 const Button = styled.TouchableOpacity`
-  padding-vertical: 10px;
-  padding-horizontal: 16px;
-  margin-left: 8px;
+    padding-vertical: 10px;
+    padding-horizontal: 16px;
+    margin-left: 8px;
 `;
 
 const ButtonText = styled.Text`
-  font-size: 16px;
-  font-weight: 700;
-  color: ${highlight};
+    font-size: 16px;
+    font-weight: 700;
+    color: ${highlight};
 `;
 
 // ---------- Animated Star ----------
-function AnimatedStar({ index, filled, onPress }) {
+function AnimatedStar({ filled, onPress }) {
     const scale = useRef(new Animated.Value(1)).current;
 
     useEffect(() => {
@@ -96,7 +114,9 @@ export default function StarRatingModal({
                                             initialValue = 0,
                                             title = "Rate this place",
                                             subtitle = "Tap a star from 1 to 5",
-                                            onSubmit,
+                                            userId,         // ⭐ NEW
+                                            gymName,        // ⭐ NEW
+                                            onSubmit,       // still optional callback for parent
                                             onClose,
                                         }) {
     const [rating, setRating] = useState(initialValue);
@@ -107,8 +127,16 @@ export default function StarRatingModal({
         }
     }, [visible, initialValue]);
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
+        // 1) send to backend if we have enough info
+        if (userId && gymName && rating > 0) {
+            await sendRating(userId, gymName, rating);
+        }
+
+        // 2) bubble up rating to parent if they provided a callback
         if (onSubmit) onSubmit(rating);
+
+        // 3) close modal
         if (onClose) onClose();
     };
 
@@ -123,7 +151,6 @@ export default function StarRatingModal({
                         {[1, 2, 3, 4, 5].map((num) => (
                             <AnimatedStar
                                 key={num}
-                                index={num}
                                 filled={rating >= num}
                                 onPress={() => setRating(num)}
                             />

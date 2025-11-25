@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Alert, AlertEnv, Platform, View} from 'react-native';
 import styled from 'styled-components/native';
 import {gs} from '../theme/GlobalStyles';
@@ -158,6 +158,71 @@ export default function UserPreferencesScreen({ route }) {
     const BASE_URL =
         Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
 
+
+    const applyBackendPreferences = (prefs) => {
+        if (!prefs) return;
+
+        // env / intensity / time from backend
+        if (prefs.env) setEnv(prefs.env);
+        if (prefs.intensity) setIntensity(prefs.intensity);
+        if (prefs.time) {
+            try {
+                setTime(new Date(prefs.time));
+            } catch (e) {
+                console.log("Invalid time from backend:", prefs.time);
+            }
+        }
+
+        // activities → toggle the right buttons
+        if (Array.isArray(prefs.activities)) {
+            setActivityConfig(prev => {
+                const next = { ...prev };
+
+                Object.keys(next).forEach(key => {
+                    const type = next[key].type; // e.g. "Boxing", "Muay Thai"
+                    next[key] = {
+                        ...next[key],
+                        active: prefs.activities.includes(type),
+                    };
+                });
+
+                return next;
+            });
+        }
+    };
+    useEffect(() => {
+        if (!userId) return;
+
+        const fetchExistingPreferences = async () => {
+            try {
+                // 🔁 adjust endpoint/shape to match your backend
+                const res = await axios.get(`${BASE_URL}/api/preferences/`, {
+                    params: { user_id: userId },
+                });
+
+                // Possible shapes:
+                // 1) { activities, env, intensity, time }
+                // 2) { preferences: { activities, env, intensity, time } }
+                const prefs =
+                    res.data?.preferences && typeof res.data.preferences === "object"
+                        ? res.data.preferences
+                        : res.data;
+
+                console.log("Loaded backend preferences:", prefs);
+                applyBackendPreferences(prefs);
+            } catch (err) {
+                console.log(
+                    "No existing preferences or failed to load:",
+                    err.response?.data || err.message
+                );
+                // it's okay if there are none — user is probably new
+            }
+        };
+
+        fetchExistingPreferences();
+    }, [userId, BASE_URL]);
+
+
     const handleSave = async () => {
         try {
             setIsSaving(true);
@@ -175,6 +240,7 @@ export default function UserPreferencesScreen({ route }) {
             const selectedActivities = getSelectedActivities();
 
             const payload = {
+                user_id: userId,              // ⭐ link prefs to this user
                 activities: selectedActivities,
                 env,
                 intensity,

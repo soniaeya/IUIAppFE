@@ -22,6 +22,7 @@ export const gs = StyleSheet.create({
         textAlign: "center",
     },
 
+
     modalOverlay: {
         position: "absolute",
         top: 0,
