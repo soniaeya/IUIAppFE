@@ -6,6 +6,7 @@ import Geolocation from '@react-native-community/geolocation';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import axios from "axios";
 import RecommendationBox from "./RecommendationBox";
+import {LoadingRecommendation} from "./LoadingRecommendation";
 import {gs} from "../../theme/GlobalStyles";
 
 
@@ -21,14 +22,14 @@ export default function MapComponent({ userId  }) {
     const mapRef = useRef(null);
     const searchRef = useRef(null);
     const [mapSearchQuery, setMapSearchQuery] = useState("");
-
+    const lastLocationSourceRef = useRef("backend");  // 🔁 "device" | "backend"
 
     const [ratings, setRatings] = useState({});
     const [selectedLocation, setSelectedLocation] = useState(null);
 
     const [recommendations, setRecommendations] = useState([]);
     const [currentIdx, setCurrentIdx] = useState(0);
-
+    const [recLoading, setRecLoading] = useState(true);
     const [currentGymIndex, setCurrentGymIndex] = useState(0);
     const [weather, setWeather] = useState(null);
     const [showWeatherModal, setShowWeatherModal] = useState(false);
@@ -53,14 +54,24 @@ export default function MapComponent({ userId  }) {
 
         const loadInitialLocation = async () => {
             if (location) return;          // don't override device GPS
-            await fetchBackendLocation();  // maybe center on last saved location ONCE
+            await fetchBackendLocation(false);  // initial center, no popup
         };
 
         loadInitialLocation();
-    }, [userId]);        // <- no selectedLocation, no interval
-// ⏰ Detect device time jumps
+    }, [userId]);
 
 
+
+    useEffect(() => {
+        if (!userId) return;
+
+        const interval = setInterval(() => {
+            // 🔁 Check if backend location changed; show modal if yes
+            fetchBackendLocation(true);
+        }, 15000); // every 15s (tune this if you want)
+
+        return () => clearInterval(interval);
+    }, [userId]);
 
     useEffect(() => {
         // 🔥 TEMP: manual weather override for testing
@@ -69,9 +80,10 @@ export default function MapComponent({ userId  }) {
             description: "test rain",
             temp: 12,
         });
-    }, []);
-    const fetchRecommendations = useCallback(async () => {
+    }, []);const fetchRecommendations = useCallback(async () => {
         if (!userId) return;
+
+        setRecLoading(true);   // ⬅️ start loading
 
         try {
             const res = await axios.get(`${BASE_URL}/recommendations`, {
@@ -82,14 +94,19 @@ export default function MapComponent({ userId  }) {
         } catch (err) {
             if (err.response?.status === 400) {
                 console.log("➡️ Preferences not set yet. Skipping recommendations.");
+                setRecommendations([]);      // nothing to show
+                setRecLoading(false);        // ⬅️ stop loading
                 return;
             }
             console.error(
                 "Error fetching recommendations",
                 err.response?.data || err.message
             );
+        } finally {
+            setRecLoading(false);            // ⬅️ stop loading in normal case
         }
     }, [userId, BASE_URL]);
+
 
 
     useEffect(() => {
@@ -137,7 +154,9 @@ export default function MapComponent({ userId  }) {
     }, [fetchRecommendations]);
 
 
-    const fetchBackendLocation = async () => {
+    const fetchBackendLocation = async (showPopupOnChange = false) => {
+        if (!userId) return;
+
         try {
             const res = await axios.get(`${BASE_URL}/user/location`, {
                 params: { user_id: userId },
@@ -152,14 +171,13 @@ export default function MapComponent({ userId  }) {
             }
 
             const coords = { latitude, longitude };
-            setLocation(coords);
 
-            if (mapRef.current) {
-                mapRef.current.animateToRegion(
-                    { ...coords, latitudeDelta: 0.01, longitudeDelta: 0.01 },
-                    1000
-                );
-            }
+            // Use unified helper; don't PUT again (skipBackend: true)
+            await updateUserLocation(coords, {
+                skipBackend: true,
+                showPopup: showPopupOnChange,   // show modal only when polling
+                source: "backend",              // 🧠 mark source
+            });
         } catch (err) {
             console.log(
                 "Could not fetch backend location:",
@@ -167,8 +185,6 @@ export default function MapComponent({ userId  }) {
             );
         }
     };
-
-
 
 
 
@@ -228,13 +244,58 @@ export default function MapComponent({ userId  }) {
         }
         return `🌤️ Current weather: ${main || "Unknown"}`;
     };
-    const updateUserLocation = async (coords) => {
+
+
+
+    const updateUserLocation = async (
+        coords,
+        options = {}      // { skipBackend?: boolean, showPopup?: boolean, source?: "device" | "backend" }
+    ) => {
+        const {
+            skipBackend = false,
+            showPopup = false,
+            source = "device",
+        } = options;
+
+        // remember where this location came from
+        lastLocationSourceRef.current = source;
+
+        // 1) Update local state & optionally show modal
+        setLocation(prev => {
+            const changed =
+                !prev ||
+                prev.latitude !== coords.latitude ||
+                prev.longitude !== coords.longitude;
+
+            if (changed && showPopup) {
+                setLocationPopupVisible(true);
+            }
+            return coords;
+        });
+
+        // 2) Recenter map
+        if (mapRef.current) {
+            mapRef.current.animateToRegion(
+                { ...coords, latitudeDelta: 0.01, longitudeDelta: 0.01 },
+                1000
+            );
+        }
+
+        // 3) Optionally push to backend
+        if (skipBackend || !userId) return;
+
         try {
-            await axios.put(`${BASE_URL}/user/location`, {
+            const payload = {
                 user_id: userId,
-                location: coords,
-            });
-            console.log("User location updated in backend:", coords);
+                location: {
+                    latitude: coords.latitude,
+                    longitude: coords.longitude,
+                },
+            };
+
+            console.log("PUT /user/location payload:", payload);
+            const res = await axios.put(`${BASE_URL}/user/location`, payload);
+            console.log("User location updated in backend:", res.data);
         } catch (err) {
             console.log(
                 "Error updating backend location:",
@@ -242,6 +303,7 @@ export default function MapComponent({ userId  }) {
             );
         }
     };
+
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -252,6 +314,7 @@ export default function MapComponent({ userId  }) {
     }, []);
 
 
+
     const getCurrentLocation = () => {
         Geolocation.getCurrentPosition(
             (position) => {
@@ -260,40 +323,30 @@ export default function MapComponent({ userId  }) {
 
                 console.log("📍 Device GPS:", coords);
 
-                setLocation((prev) => {
-                    const isFirstTime = !hasFetchedOnce.current;
+                // 🔐 If last update came from backend, don't override it
+                if (lastLocationSourceRef.current === "backend") {
+                    console.log("Skipping GPS update — backend location is active");
+                    setLoading(false);
+                    return;
+                }
 
-                    // Mark that we have now fetched at least once
-                    hasFetchedOnce.current = true;
+                const isFirstTime = !hasFetchedOnce.current;
+                hasFetchedOnce.current = true;
 
-                    const locationChanged =
-                        !prev ||
-                        prev.latitude !== coords.latitude ||
-                        prev.longitude !== coords.longitude;
-
-                    // Show popup ONLY if location changed AND it's not the first reading
-                    if (!isFirstTime && locationChanged) {
-                        console.log("🔄 Location changed");
-                        updateUserLocation(coords);
-                        setLocationPopupVisible(true);
-                    } else if (locationChanged) {
-                        // First time: update backend but don't show popup
-                        console.log("✨ First location update (no popup)");
-                        updateUserLocation(coords);
-                    }
-
-                    return coords;
+                // From device → update local + backend.
+                // Show modal only after the first reading.
+                updateUserLocation(coords, {
+                    showPopup: !isFirstTime,
+                    source: "device",
                 });
 
                 setLoading(false);
             },
-
             (error) => {
                 console.log("❌ Geolocation error:", error);
                 setError(`Location error: ${error.message}`);
                 setLoading(false);
             },
-
             {
                 enableHighAccuracy: true,
                 timeout: 20000,
@@ -304,6 +357,8 @@ export default function MapComponent({ userId  }) {
             }
         );
     };
+
+
 
 
 
@@ -609,6 +664,23 @@ export default function MapComponent({ userId  }) {
             );
         }
     };
+    const toRad = (deg) => (deg * Math.PI) / 180;
+
+    const getDistanceKm = (lat1, lon1, lat2, lon2) => {
+        const R = 6371; // km
+        const dLat = toRad(lat2 - lat1);
+        const dLon = toRad(lon2 - lon1);
+
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(toRad(lat1)) *
+            Math.cos(toRad(lat2)) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    };
 
 
     if (loading) {
@@ -627,6 +699,17 @@ export default function MapComponent({ userId  }) {
             </View>
         );
     }
+
+    const selectedDistanceKm =
+        location && selectedLocation
+            ? getDistanceKm(
+                location.latitude,
+                location.longitude,
+                selectedLocation.latitude,
+                selectedLocation.longitude
+            )
+            : null;
+
 
     return (
         <View style={[styles.container]}>
@@ -711,17 +794,26 @@ export default function MapComponent({ userId  }) {
 
             </View>
 
-            <RecommendationBox
-                key={recUiVersion}
-                expanded={recExpanded}
-                userId={userId}
-                selectedLocation={selectedLocation}
-                onNextRecommendation={handleNextRecommendation}
-                onPrevRecommendation={handlePrevRecommendation}
-                ratings={ratings}
-                onSetRating={handleSetRating}
-                setExpanded={setRecExpanded}
-            />
+            {recLoading || recommendations.length === 0 ? (
+                // 💫 show loading container when there is no recommendation box
+                <LoadingRecommendation />
+            ) : (
+                <RecommendationBox
+                    key={recUiVersion}
+                    expanded={recExpanded}
+                    userId={userId}
+                    selectedLocation={selectedLocation}
+                    onNextRecommendation={handleNextRecommendation}
+                    onPrevRecommendation={handlePrevRecommendation}
+                    ratings={ratings}
+                    onSetRating={handleSetRating}
+                    setExpanded={setRecExpanded}
+                    distanceKm={selectedDistanceKm}
+                />
+            )}
+
+
+
 
 
             {location ? (

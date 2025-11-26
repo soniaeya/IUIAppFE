@@ -5,16 +5,18 @@ import React, {useEffect, useState} from "react";
 const background_color = "white";
 import StarRatingModal from "./StarRatingModal";
 export default function RecommendationBox({
+                                              expanded,
                                               userId,
                                               selectedLocation,
                                               onNextRecommendation,
                                               onPrevRecommendation,
                                               ratings,
                                               onSetRating,
-                                              expanded, setExpanded
-                                          })
+                                              setExpanded,
+                                              distanceKm,              // ⭐ NEW
+                                          }) {
 
-{
+
     const [ratingModalVisible, setRatingModalVisible] = useState(false);
     if (!selectedLocation) {
 
@@ -156,6 +158,14 @@ export default function RecommendationBox({
                     <StatsText>Address</StatsText>: {selectedLocation.address}
                     {'\n'}
                     <StatsText>Tel</StatsText>: {selectedLocation.phone}
+                    {'\n'}
+                    <StatsText>Distance: </StatsText>
+                    {typeof distanceKm === "number" && (
+                        <DistanceText>
+                            {distanceKm.toFixed(1)} km away
+                        </DistanceText>
+                    )}
+
                 </StatsContainer>
             </RecommendationInfoContainer>
 
@@ -254,4 +264,9 @@ const StatsContainer = styled.Text`
     padding: 10px;
     line-height: 18px;
     z-index: 999;
+`;
+const DistanceText = styled.Text`
+  font-size: 14px;
+  color: #555;
+  margin-top: 4px;
 `;
