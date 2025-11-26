@@ -15,6 +15,7 @@ export default function MapComponent({ userId  }) {
         Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
     const hasFetchedOnce = useRef(false);
     const [recUiVersion, setRecUiVersion] = useState(0);  // controls rec UI reset
+    const lastPrefsTimeRef = useRef(null);
     const [recExpanded, setRecExpanded] = useState(false);
     const [location, setLocation] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -24,9 +25,10 @@ export default function MapComponent({ userId  }) {
     const [mapSearchQuery, setMapSearchQuery] = useState("");
     const lastLocationSourceRef = useRef("backend");  // 🔁 "device" | "backend"
     const [preferredTime, setPreferredTime] = useState(null); // Date | null
-
+    const lastServerTimeRef = useRef(null);                   // ⭐ track last /user/time value
     const [ratings, setRatings] = useState({});
     const [selectedLocation, setSelectedLocation] = useState(null);
+    const [timeUpdateModalVisible, setTimeUpdateModalVisible] = useState(false);
 
     const [recommendations, setRecommendations] = useState([]);
     const [currentIdx, setCurrentIdx] = useState(0);
@@ -45,10 +47,19 @@ export default function MapComponent({ userId  }) {
 
     const [weatherLocked, setWeatherLocked] = useState(false);  // when true, API won't overwrite
 
+    const buildPreferredTimeToday = () => {
+        if (!preferredTime) return null;
+
+        const now = new Date();
+        const d = new Date(now);
+        d.setHours(preferredTime.getHours(), preferredTime.getMinutes(), 0, 0);
+        return d;
+    };
+// 🔁 Poll backend for preferred time (so Swagger changes are detected)
     useEffect(() => {
         if (!userId) return;
 
-        const fetchPreferredTime = async () => {
+        const pollPreferredTime = async () => {
             try {
                 const res = await axios.get(`${BASE_URL}/api/preferences/`, {
                     params: { user_id: userId },
@@ -59,34 +70,80 @@ export default function MapComponent({ userId  }) {
                         ? res.data.preferences
                         : res.data;
 
-                if (prefs?.time) {
-                    try {
-                        setPreferredTime(new Date(prefs.time));
-                        console.log("Loaded preferred time:", prefs.time);
-                    } catch (e) {
-                        console.log("Invalid preferred time:", prefs.time);
+                const serverTimeStr = prefs?.time;
+                if (!serverTimeStr) return;
+
+                // First time: just initialize state + ref
+                if (lastPrefsTimeRef.current === null) {
+                    lastPrefsTimeRef.current = serverTimeStr;
+                    if (!preferredTime) {
+                        const firstDate = new Date(serverTimeStr);
+                        setPreferredTime(firstDate);
                     }
+                    return;
+                }
+
+                // If backend time changed (Swagger, another client, etc.)
+                if (lastPrefsTimeRef.current !== serverTimeStr) {
+                    console.log("⏰ Backend preferred time changed:", serverTimeStr);
+                    lastPrefsTimeRef.current = serverTimeStr;
+
+                    const newDate = new Date(serverTimeStr);
+                    setPreferredTime(newDate);          // triggers your preferredTime effect below
+
+                    // Open RecommendationBox and refresh UI immediately
+                    setRecExpanded(true);
+                    setRecUiVersion(v => v + 1);
+                    fetchRecommendations();
+
+                    // 👉 Show the "Preferred Time Updated" modal
+                    setTimeUpdateModalVisible(true);
                 }
             } catch (err) {
                 console.log(
-                    "Could not load preferred time:",
+                    "Could not poll preferred time:",
                     err.response?.data || err.message
                 );
             }
         };
 
-        fetchPreferredTime();
-    }, [userId, BASE_URL]);
+        // run once immediately, then every 15s
+        pollPreferredTime();
+        const interval = setInterval(pollPreferredTime, 3000);
 
-    const buildPreferredTimeToday = () => {
-        if (!preferredTime) return null;
+        return () => clearInterval(interval);
+    }, [userId, BASE_URL, fetchRecommendations, preferredTime]);
 
-        const now = new Date();
-        const d = new Date(now);
-        d.setHours(preferredTime.getHours(), preferredTime.getMinutes(), 0, 0);
-        return d;
-    };
 
+
+    useEffect(() => {
+        if (!preferredTime) return;
+
+        console.log("⏰ Preferred time changed:", preferredTime.toISOString());
+
+        // 1) Re-fetch recommendations (backend can eventually use this time)
+        fetchRecommendations();
+
+        // 2) Reset / refresh RecommendationBox UI
+        setRecExpanded(true);         // or false if you prefer collapsed
+        setRecUiVersion(v => v + 1);  // force re-mount
+        setCurrentIdx(0);             // start from first recommendation
+
+        // 3) Recompute openAtPreferredTime for the currently selected place
+        setSelectedLocation(prev => {
+            if (!prev) return prev;
+
+            const prefDate = buildPreferredTimeToday();
+            const updatedOpenAtPreferred = prefDate
+                ? checkIfOpen(prev.rawPeriods, prefDate)
+                : false;
+
+            return {
+                ...prev,
+                openAtPreferredTime: updatedOpenAtPreferred,
+            };
+        });
+    }, [preferredTime, fetchRecommendations]);
 
 // ⏰ Format a Date into HH:MM (24h or 12h depending on device)
     const formatTime = (date) =>
@@ -124,7 +181,9 @@ export default function MapComponent({ userId  }) {
             description: "test rain",
             temp: 12,
         });
-    }, []);const fetchRecommendations = useCallback(async () => {
+    }, []);
+
+    const fetchRecommendations = useCallback(async () => {
         if (!userId) return;
 
         setRecLoading(true);   // ⬅️ start loading
@@ -157,6 +216,51 @@ export default function MapComponent({ userId  }) {
         fetchRecommendations();
     }, [fetchRecommendations]);
 
+// 🔁 Watch for backend /user/time changes (e.g. from Swagger)
+    useEffect(() => {
+        if (!userId) return;
+
+        const interval = setInterval(async () => {
+            try {
+                const res = await axios.get(`${BASE_URL}/user/time`, {
+                    params: { user_id: userId },
+                });
+
+                const serverIso = res.data?.time;
+                if (!serverIso) return;
+
+                // First time: just initialize local state, don't pop modal
+                if (!lastServerTimeRef.current) {
+                    lastServerTimeRef.current = serverIso;
+                    setPreferredTime(new Date(serverIso));
+                    return;
+                }
+
+                // If server time changed (e.g. via Swagger PUT /user/time)
+                if (lastServerTimeRef.current !== serverIso) {
+                    console.log("⏰ Detected server /user/time change:", serverIso);
+                    lastServerTimeRef.current = serverIso;
+
+                    const newDate = new Date(serverIso);
+                    setPreferredTime(newDate);              // updates your preferredTime state
+                    setTimeUpdateModalVisible(true);        // ⭐ show modal
+
+                    // 🔄 refresh recommendations & open the RecommendationBox
+                    fetchRecommendations();
+                    setRecExpanded(true);
+                    setRecUiVersion(v => v + 1);
+                    setCurrentIdx(0);
+                }
+            } catch (err) {
+                console.log(
+                    "Error polling /user/time:",
+                    err.response?.data || err.message
+                );
+            }
+        }, 10000); // every 10s (tune if you want)
+
+        return () => clearInterval(interval);
+    }, [userId, BASE_URL, fetchRecommendations]);
 
     useEffect(() => {
         // start with "now" as baseline
@@ -168,28 +272,9 @@ export default function MapComponent({ userId  }) {
             const diffMs = Math.abs(now.getTime() - previous.getTime());
 
             // We expect ~5000 ms between ticks.
-            if (diffMs > 15000) { // 15 seconds threshold
-                setLastTimeString(formatTime(previous));
-                setCurrentTimeString(formatTime(now));
-                setTimeChangeModalVisible(true);
 
-                // 🔁 re-fetch recommendations when time changes
-                fetchRecommendations();
 
-                // 🔄 reset / change RecommendationBox open/closed UI
-                setRecExpanded(true);
-                setRecUiVersion(v => v + 1);
 
-                // ✅ recompute open/closed for the currently selected place
-                setSelectedLocation(prev => {
-                    if (!prev) return prev;
-                    const updatedIsOpenNow = checkIfOpen(prev.rawPeriods, new Date());
-                    return {
-                        ...prev,
-                        isOpenNow: updatedIsOpenNow,
-                    };
-                });
-            }
 
             previous = now;
         }, 5000); // check every 5 seconds
@@ -662,7 +747,7 @@ export default function MapComponent({ userId  }) {
         const postalCode = postalComp?.long_name || '';
 
         // Is it open now?
-        const isOpenNow = details.current_opening_hours?.open_now ?? false;
+/*        const isOpenNow = details.current_opening_hours?.open_now ?? false;*/
 
         // Today’s hours (from weekday_text)
         let todaysHours = '';
@@ -909,6 +994,26 @@ export default function MapComponent({ userId  }) {
 
                 </MapView>
             ) : null}
+            {timeUpdateModalVisible && (
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalBox}>
+                        <Text style={styles.modalTitle}>Preferred Time Updated</Text>
+                        <Text style={styles.modalText}>
+                            Your preferred time has been updated on the server.
+                            Recommendations will now use this new time.
+                        </Text>
+
+                        <TouchableOpacity
+                            style={styles.modalButton}
+                            onPress={() => setTimeUpdateModalVisible(false)}
+                        >
+                            <Text style={{ color: "white", fontWeight: "bold" }}>OK</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
+
+
             {showWeatherModal && (
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalBox}>

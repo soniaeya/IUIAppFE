@@ -114,9 +114,13 @@ export default function RecommendationBox({
                     {selectedLocation.rating} ★ ({selectedLocation.totalRatings})
                     {'\n'}
 
-                    {/* Open / closed status with preferred-time logic */}
+                    {/* Open / closed with preferred-time logic */}
                     <StatsText>Opened</StatsText>:{' '}
-                    {isOpenNow ? (
+                    {isOpenNow && openAtPreferred === false ? (
+                        <PreferredClosedText>
+                            Open now, but closed at your preferred time
+                        </PreferredClosedText>
+                    ) : isOpenNow ? (
                         <OpenText>Open now</OpenText>
                     ) : openAtPreferred ? (
                         <PreferredOpenText>
@@ -160,8 +164,8 @@ export default function RecommendationBox({
                 visible={ratingModalVisible}
                 initialValue={currentRating || 0}
                 userId={userId}
-                placeId={selectedLocation?.placeId}     // MUST be Google ID
-                gymName={selectedLocation?.name}        // MUST be a string
+                placeId={selectedLocation?.placeId}
+                gymName={selectedLocation?.name}
                 onSubmit={(value) => onSetRating(selectedLocation.placeId, value)}
                 onClose={() => setRatingModalVisible(false)}
             />
@@ -217,7 +221,16 @@ const PreferredOpenText = styled.Text`
     padding: 10px;
     line-height: 18px;
     z-index: 999;
-    color: #b8860b; /* golden-ish for “future open” */
+    color: #b8860b; /* golden-ish */
+`;
+
+const PreferredClosedText = styled.Text`
+    font-family: "Roboto-Regular";
+    font-size: 12px;
+    padding: 10px;
+    line-height: 18px;
+    z-index: 999;
+    color: #cc7000; /* warm orange for “warning” */
 `;
 
 const CloseText = styled.Text`
@@ -244,7 +257,6 @@ const ImageContainer = styled.View`
     background-color: ${background_color};
 `;
 
-// keep as Text for now (matches your layout)
 const StatsContainer = styled.Text`
     font-family: "Roboto-Regular";
     font-size: 13px;
