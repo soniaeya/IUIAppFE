@@ -23,6 +23,7 @@ export default function MapComponent({ userId  }) {
     const searchRef = useRef(null);
     const [mapSearchQuery, setMapSearchQuery] = useState("");
     const lastLocationSourceRef = useRef("backend");  // 🔁 "device" | "backend"
+    const [preferredTime, setPreferredTime] = useState(null); // Date | null
 
     const [ratings, setRatings] = useState({});
     const [selectedLocation, setSelectedLocation] = useState(null);
@@ -43,6 +44,49 @@ export default function MapComponent({ userId  }) {
 
 
     const [weatherLocked, setWeatherLocked] = useState(false);  // when true, API won't overwrite
+
+    useEffect(() => {
+        if (!userId) return;
+
+        const fetchPreferredTime = async () => {
+            try {
+                const res = await axios.get(`${BASE_URL}/api/preferences/`, {
+                    params: { user_id: userId },
+                });
+
+                const prefs =
+                    res.data?.preferences && typeof res.data.preferences === "object"
+                        ? res.data.preferences
+                        : res.data;
+
+                if (prefs?.time) {
+                    try {
+                        setPreferredTime(new Date(prefs.time));
+                        console.log("Loaded preferred time:", prefs.time);
+                    } catch (e) {
+                        console.log("Invalid preferred time:", prefs.time);
+                    }
+                }
+            } catch (err) {
+                console.log(
+                    "Could not load preferred time:",
+                    err.response?.data || err.message
+                );
+            }
+        };
+
+        fetchPreferredTime();
+    }, [userId, BASE_URL]);
+
+    const buildPreferredTimeToday = () => {
+        if (!preferredTime) return null;
+
+        const now = new Date();
+        const d = new Date(now);
+        d.setHours(preferredTime.getHours(), preferredTime.getMinutes(), 0, 0);
+        return d;
+    };
+
 
 // ⏰ Format a Date into HH:MM (24h or 12h depending on device)
     const formatTime = (date) =>
@@ -476,10 +520,12 @@ export default function MapComponent({ userId  }) {
         let tries = 0;
         let currentIndex = startIdx;
 
+        const now = new Date();
+        const prefDate = buildPreferredTimeToday(); // today at user’s preferred HH:MM
+
         while (tries < recommendations.length) {
             const name = recommendations[currentIndex];
 
-            // this already calls handlePlaceSelect and sets selectedLocation
             const details = await selectFirstPlaceForText(name);
             if (!details) {
                 currentIndex = (currentIndex + step + recommendations.length) % recommendations.length;
@@ -488,15 +534,19 @@ export default function MapComponent({ userId  }) {
             }
 
             const periods = details.opening_hours?.periods || [];
-            const isOpen = checkIfOpen(periods, new Date());   // ✅ device time
 
-            if (isOpen) {
+            const isOpenNow = checkIfOpen(periods, now);
+            let isOpenAtPreferred = false;
+            if (prefDate) {
+                isOpenAtPreferred = checkIfOpen(periods, prefDate);
+            }
+
+            // ✅ accept gyms that are either open now OR will be open at preferred time
+            if (isOpenNow || isOpenAtPreferred) {
                 setCurrentIdx(currentIndex);
-                // handlePlaceSelect already ran inside selectFirstPlaceForText
                 return;
             }
 
-            // try next candidate in the given direction
             currentIndex = (currentIndex + step + recommendations.length) % recommendations.length;
             tries++;
         }
@@ -599,7 +649,11 @@ export default function MapComponent({ userId  }) {
 
 // compute if open using device time
         const recomputedOpen = checkIfOpen(periods, deviceDate);
-
+        let openAtPreferredTime = false;
+        const prefDate = buildPreferredTimeToday();
+        if (prefDate) {
+            openAtPreferredTime = checkIfOpen(periods, prefDate);
+        }
 
         // Postal code (H2X 1K4 → prefix H2X if you want)
         const postalComp = details.address_components?.find(comp =>
@@ -627,7 +681,6 @@ export default function MapComponent({ userId  }) {
             latitude: lat,
             longitude: lng,
         };
-
         setSelectedLocation({
             latitude: lat,
             longitude: lng,
@@ -642,9 +695,9 @@ export default function MapComponent({ userId  }) {
             todaysHours,
             postalCode,
             placeId,
-            rawPeriods: details.opening_hours?.periods || []
+            rawPeriods: periods,
+            openAtPreferredTime,        // ⭐ new field for the RecommendationBox UI
         });
-
 
 
 

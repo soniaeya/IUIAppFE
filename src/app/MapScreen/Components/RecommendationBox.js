@@ -1,9 +1,10 @@
 import styled from "styled-components/native";
 import MaterialDesignIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import {Image, Text, TouchableOpacity} from "react-native";
-import React, {useEffect, useState} from "react";
+import { Image, Text, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
 const background_color = "white";
 import StarRatingModal from "./StarRatingModal";
+
 export default function RecommendationBox({
                                               expanded,
                                               userId,
@@ -13,56 +14,14 @@ export default function RecommendationBox({
                                               ratings,
                                               onSetRating,
                                               setExpanded,
-                                              distanceKm,              // ⭐ NEW
+                                              distanceKm,
                                           }) {
-
-
     const [ratingModalVisible, setRatingModalVisible] = useState(false);
+
+    // 👉 No current selection yet: just show chevrons
     if (!selectedLocation) {
-
-        return (<EmptyRecommendationContainer>
-
-            <MaterialDesignIcons
-                name="chevron-right"
-                size={40}
-                style={{
-                    position: "absolute",
-                    right: 0,
-                    bottom: -445,
-                    zIndex: 999,
-                }}
-                onPress={() => {
-                    onNextRecommendation();
-                    setExpanded(prev => !prev);   // or !expanded if you prefer
-                }}
-            />
-
-            {/* PREV */}
-            <MaterialDesignIcons
-                name="chevron-left"
-                size={40}
-                style={{
-                    position: "absolute",
-                    left: 0,
-                    bottom: -445,
-                    zIndex: 999,
-                }}
-                onPress={() => {
-                    onPrevRecommendation();
-                    setExpanded(prev => !prev);   // or !expanded if you prefer
-                }}
-            />
-
-        </EmptyRecommendationContainer>)
-    }
-    const userRatingForThisPlace = ratings[selectedLocation.placeId];
-    const currentRating = ratings[selectedLocation?.placeId] || 0;
-
-
-    if (selectedLocation && selectedLocation.isOpenNow === false) {
         return (
             <EmptyRecommendationContainer>
-                {/* You can show arrows so the user can skip closed ones */}
                 <MaterialDesignIcons
                     name="chevron-right"
                     size={40}
@@ -72,7 +31,10 @@ export default function RecommendationBox({
                         bottom: -445,
                         zIndex: 999,
                     }}
-                    onPress={onNextRecommendation}
+                    onPress={() => {
+                        onNextRecommendation();
+                        setExpanded(prev => !prev);   // or !expanded
+                    }}
                 />
 
                 <MaterialDesignIcons
@@ -84,16 +46,22 @@ export default function RecommendationBox({
                         bottom: -445,
                         zIndex: 999,
                     }}
-                    onPress={onPrevRecommendation}
+                    onPress={() => {
+                        onPrevRecommendation();
+                        setExpanded(prev => !prev);
+                    }}
                 />
             </EmptyRecommendationContainer>
         );
     }
 
+    const currentRating = ratings[selectedLocation?.placeId] || 0;
+    const isOpenNow = selectedLocation?.isOpenNow;
+    const openAtPreferred = selectedLocation?.openAtPreferredTime;
 
     return (
-        <RecommendationContainer style={{zIndex: 999, height: 300}}>
-
+        <RecommendationContainer style={{ zIndex: 999, height: 300 }}>
+            {/* NEXT */}
             <MaterialDesignIcons
                 name="chevron-right"
                 size={40}
@@ -119,12 +87,13 @@ export default function RecommendationBox({
                 onPress={onPrevRecommendation}
             />
 
-                <RecommendationInfoContainer style={{zIndex: 999, marginTop: 35}}>
+            <RecommendationInfoContainer style={{ zIndex: 999, marginTop: 35 }}>
                 <GymTitle>{selectedLocation.name}</GymTitle>
 
                 <StatsContainer>
+                    {/* Your rating (tap to edit) */}
                     <TouchableOpacity
-                        style={{zIndex: 999, position: "absolute"}}
+                        style={{ zIndex: 999, position: "absolute" }}
                         onPress={() => {
                             if (!selectedLocation?.placeId) {
                                 console.warn("Cannot rate: missing placeId");
@@ -132,49 +101,61 @@ export default function RecommendationBox({
                             }
                             setRatingModalVisible(true);
                         }}
-
                     >
-
-
                         <StatsText>
                             Your Rating: {currentRating ? `${currentRating}★` : "No rating"}
                         </StatsText>
-
-                        {console.log(JSON.stringify(ratings))}
                     </TouchableOpacity>
 
-
                     <Text>{"\n"}</Text>
+
+                    {/* Google user rating */}
                     <StatsText>User Rating</StatsText>:{' '}
                     {selectedLocation.rating} ★ ({selectedLocation.totalRatings})
                     {'\n'}
+
+                    {/* Open / closed status with preferred-time logic */}
                     <StatsText>Opened</StatsText>:{' '}
-                    {selectedLocation.isOpenNow ? (
-                        <OpenText>Open</OpenText>
+                    {isOpenNow ? (
+                        <OpenText>Open now</OpenText>
+                    ) : openAtPreferred ? (
+                        <PreferredOpenText>
+                            Closed now, open at your preferred time
+                        </PreferredOpenText>
                     ) : (
                         <CloseText>Closed</CloseText>
                     )}
                     {'\n'}
+
+                    {/* Address */}
                     <StatsText>Address</StatsText>: {selectedLocation.address}
                     {'\n'}
+
+                    {/* Phone */}
                     <StatsText>Tel</StatsText>: {selectedLocation.phone}
                     {'\n'}
+
+                    {/* Distance */}
                     <StatsText>Distance: </StatsText>
                     {typeof distanceKm === "number" && (
-                        <DistanceText>
-                            {distanceKm.toFixed(1)} km away
-                        </DistanceText>
+                        <DistanceText>{distanceKm.toFixed(1)} km away</DistanceText>
                     )}
-
                 </StatsContainer>
             </RecommendationInfoContainer>
 
-            <ImageContainer style={{zIndex: 999, marginTop: 30}}>
-                <Image
-                    source={{uri: selectedLocation.photo}}
-                    style={{width: "100%", height: 200, marginTop: 5, borderRadius: 20}}
-                />
+            {/* Photo */}
+            <ImageContainer style={{ zIndex: 999, marginTop: 30 }}>
+                {selectedLocation.photo ? (
+                    <Image
+                        source={{ uri: selectedLocation.photo }}
+                        style={{ width: "100%", height: 200, marginTop: 5, borderRadius: 20 }}
+                    />
+                ) : (
+                    <Text style={{ padding: 10 }}>No photo available</Text>
+                )}
             </ImageContainer>
+
+            {/* Rating modal */}
             <StarRatingModal
                 visible={ratingModalVisible}
                 initialValue={currentRating || 0}
@@ -184,16 +165,12 @@ export default function RecommendationBox({
                 onSubmit={(value) => onSetRating(selectedLocation.placeId, value)}
                 onClose={() => setRatingModalVisible(false)}
             />
-
-
-
-
-
         </RecommendationContainer>
     );
 }
 
-// --- styles unchanged ---
+// --- styles ---
+
 const RecommendationContainer = styled.View`
     top: 70px;
     border-radius: 16px;
@@ -201,8 +178,8 @@ const RecommendationContainer = styled.View`
     width: 100%;
     background-color: white;
 `;
-const EmptyRecommendationContainer = styled.View`
 
+const EmptyRecommendationContainer = styled.View`
     height: 0;
     width: 100%;
     background-color: blue;
@@ -234,6 +211,15 @@ const OpenText = styled.Text`
     color: darkolivegreen;
 `;
 
+const PreferredOpenText = styled.Text`
+    font-family: "Roboto-Regular";
+    font-size: 12px;
+    padding: 10px;
+    line-height: 18px;
+    z-index: 999;
+    color: #b8860b; /* golden-ish for “future open” */
+`;
+
 const CloseText = styled.Text`
     font-family: "Roboto-Regular";
     font-size: 12px;
@@ -258,6 +244,7 @@ const ImageContainer = styled.View`
     background-color: ${background_color};
 `;
 
+// keep as Text for now (matches your layout)
 const StatsContainer = styled.Text`
     font-family: "Roboto-Regular";
     font-size: 13px;
@@ -265,8 +252,9 @@ const StatsContainer = styled.Text`
     line-height: 18px;
     z-index: 999;
 `;
+
 const DistanceText = styled.Text`
-  font-size: 14px;
-  color: #555;
-  margin-top: 4px;
+    font-size: 14px;
+    color: #555;
+    margin-top: 4px;
 `;
