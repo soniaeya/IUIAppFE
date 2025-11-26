@@ -221,12 +221,9 @@ export default function UserPreferencesScreen({ route }) {
 
         fetchExistingPreferences();
     }, [userId, BASE_URL]);
-
-
     const handleSave = async () => {
         try {
-            setIsSaving(true);
-
+            // ✅ validate *before* setting isSaving so you don't get stuck in "saving"
             if (!env) {
                 setAlertEnvVisible(true);
                 return;
@@ -237,6 +234,8 @@ export default function UserPreferencesScreen({ route }) {
                 return;
             }
 
+            setIsSaving(true);
+
             const selectedActivities = getSelectedActivities();
 
             const payload = {
@@ -244,14 +243,21 @@ export default function UserPreferencesScreen({ route }) {
                 activities: selectedActivities,
                 env,
                 intensity,
-                time: time.toISOString(),
+                time: time.toISOString(),     // preferred time
             };
 
             console.log("Saving preferences payload:", payload);
 
-            // MUST IMPORT Alert ABOVE
-            const response = await axios.post(`${BASE_URL}/api/preferences/`, payload);
+            // 1) Save full preferences (activities, env, intensity, time)
+            await axios.post(`${BASE_URL}/api/preferences/`, payload);
 
+            // 2) Explicitly update the user's preferred time via /user/time
+            await axios.put(`${BASE_URL}/user/time`, {
+                user_id: userId,
+                time: time.toISOString(),     // FastAPI -> datetime
+            });
+
+            // 3) Navigate back to map with a "preferencesSet" flag
             navigation.navigate("MapScreen", {
                 userId,
                 preferencesSet: true,
@@ -268,6 +274,7 @@ export default function UserPreferencesScreen({ route }) {
             setIsSaving(false);
         }
     };
+
 
 
 
