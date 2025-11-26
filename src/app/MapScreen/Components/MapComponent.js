@@ -84,21 +84,7 @@ export default function MapComponent({ userId  }) {
                 }
 
                 // If backend time changed (Swagger, another client, etc.)
-                if (lastPrefsTimeRef.current !== serverTimeStr) {
-                    console.log("⏰ Backend preferred time changed:", serverTimeStr);
-                    lastPrefsTimeRef.current = serverTimeStr;
 
-                    const newDate = new Date(serverTimeStr);
-                    setPreferredTime(newDate);          // triggers your preferredTime effect below
-
-                    // Open RecommendationBox and refresh UI immediately
-                    setRecExpanded(true);
-                    setRecUiVersion(v => v + 1);
-                    fetchRecommendations();
-
-                    // 👉 Show the "Preferred Time Updated" modal
-                    setTimeUpdateModalVisible(true);
-                }
             } catch (err) {
                 console.log(
                     "Could not poll preferred time:",
@@ -177,7 +163,7 @@ export default function MapComponent({ userId  }) {
     useEffect(() => {
         // 🔥 TEMP: manual weather override for testing
         setWeatherInfo({
-            main: "Rain",          // "Clear", "Clouds", "Snow", "Rain"
+            main: "Clear",          // "Clear", "Clouds", "Snow", "Rain"
             description: "test rain",
             temp: 12,
         });
