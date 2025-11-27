@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from "react";
 import { Animated, View } from "react-native";
 import styled from "styled-components/native";
@@ -9,15 +10,25 @@ export function LoadingRecommendation() {
   const fadeAnim = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 0.3,
-      duration: 800,
-      useNativeDriver: true,
-    }).start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 0.3,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    );
 
+    pulse.start();
 
+    return () => pulse.stop();
+  }, [fadeAnim]);
 
   return (
     <Container>

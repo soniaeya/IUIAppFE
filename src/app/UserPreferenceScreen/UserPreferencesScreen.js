@@ -1,8 +1,8 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {Alert, Platform, View} from 'react-native';
 import styled from 'styled-components/native';
-import {gs} from '../theme/GlobalStyles';
-import {useNavigation} from '@react-navigation/native';
+import { gs } from '../theme/GlobalStyles';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {TimePickerField} from './Components/TimePickerField';
 import axios from "axios";
 import ActivityToggleButton from "./Components/ActivityToggleButton";
@@ -125,105 +125,150 @@ const ACTIVITY_CONFIG = {
 };
 
 
+
+
+
+
 export default function UserPreferencesScreen({ route }) {
-    const { userId, email } = route.params;
+  const { userId, email } = route.params;
+
+  const navigation = useNavigation();
+  const [env, setEnv] = React.useState('');
+  const [time, setTime] = React.useState(new Date());
+  const [isSaving, setIsSaving] = useState(false);
+  const [intensity, setIntensity] = useState(null);
+  const [activityConfig, setActivityConfig] = useState(ACTIVITY_CONFIG);
+  const [alertEnvVisible, setAlertEnvVisible] = useState(false);
+  const [intensityAlertVisible, setIntensityAlertVisible] = useState(false);
+  const [rainAlertVisible, setRainAlertVisible] = useState(false);
+
+  const BASE_URL =
+    Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
+
+  const isRaining = true;
+  useFocusEffect(
+    useCallback(() => {
+      console.log("📌 Screen is now in focus!");
+
+      // Run your function
+      fetchExistingPreferences();
+
+      return () => {
+        console.log("📌 Screen lost focus");
+      };
+    }, [fetchExistingPreferences])
+  );
+
+  const applyBackendPreferences = useCallback((prefs) => {
+    if (!prefs) return;
+
+    console.log("Applying preferences:", prefs);
+
+    // env / intensity / time from backend
+    if (prefs.env) {
+      console.log("Setting env to:", prefs.env);
+      setEnv(prefs.env);
+    }
+
+    if (prefs.intensity) {
+      console.log("Setting intensity to:", prefs.intensity);
+      setIntensity(prefs.intensity);
+    }
+
+    if (prefs.time) {
+      try {
+        const parsedTime = new Date(prefs.time);
+        console.log("Setting time to:", parsedTime);
+        setTime(parsedTime);
+      } catch (e) {
+        console.log("Invalid time from backend:", prefs.time);
+      }
+    }
+
+    // activities → toggle the right buttons
+    if (Array.isArray(prefs.activities)) {
+      console.log("Setting activities to:", prefs.activities);
+      setActivityConfig(prev => {
+        const next = { ...prev };
+
+        Object.keys(next).forEach(key => {
+          const type = next[key].type;
+          const isActive = prefs.activities.includes(type);
+          next[key] = {
+            ...next[key],
+            active: isActive,
+          };
+        });
+
+        console.log("New activity config:", next);
+        return next;
+      });
+    }
+  }, []); // Empty deps since it only uses setters (which are stable)
 
 
-    const navigation = useNavigation();
-    const [env, setEnv] = React.useState('');
-    const [time, setTime] = React.useState(new Date());
-    const [isSaving, setIsSaving] = useState(false);
-    const [intensity, setIntensity] = useState(null);
-    const [activityConfig, setActivityConfig] = useState(ACTIVITY_CONFIG);
-    const [alertEnvVisible, setAlertEnvVisible] = useState(false);
-    const [intensityAlertVisible, setIntensityAlertVisible] = useState(false); // intensity
+  const fetchExistingPreferences = useCallback(async () => {
+    console.log("⚙️ fetchExistingPreferences CALLED, userId =", userId);
 
-    const [rainAlertVisible, setRainAlertVisible] = useState(false);
-    const handleEnvChange = (newEnv) => {
-        if (newEnv === "Outdoor" && isRaining) {
-            setRainAlertVisible(true);
-        }
-        setEnv(newEnv);
-    };
+    if (!userId) {
+      console.log("⛔ No userId, aborting fetchExistingPreferences");
+      return;
+    }
+
+    try {
+      console.log("Fetching preferences for user:", userId);
+
+      const res = await axios.get(`${BASE_URL}/api/preferences/`, {
+        params: { user_id: userId },
+      });
+
+      const prefs =
+        res.data?.preferences && typeof res.data.preferences === "object"
+          ? res.data.preferences
+          : res.data;
+
+      console.log("Loaded backend preferences:", prefs);
+      applyBackendPreferences(prefs);
+    } catch (err) {
+      console.log(
+        "No existing preferences or failed to load:",
+        err.response?.data || err.message
+      );
+    }
+  }, [userId, BASE_URL, applyBackendPreferences]);
 
 
-    const isRaining = true; // set to true if raining, or pass weather info via navigation/context
+
+  useFocusEffect(
+    useCallback(() => {
+      console.log("===== UserPreferencesScreen FOCUSED, userId =", userId, "=====");
+      fetchExistingPreferences();
+
+      return () => {
+        console.log("===== UserPreferencesScreen UNFOCUSED =====");
+      };
+    }, [fetchExistingPreferences, userId])
+  );
 
 
-    const getSelectedActivities = () =>
-        Object.values(activityConfig)
-            .filter(cfg => cfg.active)
-            .map(cfg => cfg.type);
-
-    const BASE_URL =
-        Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
 
 
-    const applyBackendPreferences = (prefs) => {
-        if (!prefs) return;
+  const handleEnvChange = (newEnv) => {
+    if (newEnv === "Outdoor" && isRaining) {
+      setRainAlertVisible(true);
+    }
+    setEnv(newEnv);
+  };
 
-        // env / intensity / time from backend
-        if (prefs.env) setEnv(prefs.env);
-        if (prefs.intensity) setIntensity(prefs.intensity);
-        if (prefs.time) {
-            try {
-                setTime(new Date(prefs.time));
-            } catch (e) {
-                console.log("Invalid time from backend:", prefs.time);
-            }
-        }
+  const getSelectedActivities = () =>
+    Object.values(activityConfig)
+      .filter(cfg => cfg.active)
+      .map(cfg => cfg.type);
 
-        // activities → toggle the right buttons
-        if (Array.isArray(prefs.activities)) {
-            setActivityConfig(prev => {
-                const next = { ...prev };
+  // ✅ Wrap in useCallback with proper dependencies
 
-                Object.keys(next).forEach(key => {
-                    const type = next[key].type; // e.g. "Boxing", "Muay Thai"
-                    next[key] = {
-                        ...next[key],
-                        active: prefs.activities.includes(type),
-                    };
-                });
-
-                return next;
-            });
-        }
-    };
-    useEffect(() => {
-        if (!userId) return;
-
-        const fetchExistingPreferences = async () => {
-            try {
-                // 🔁 adjust endpoint/shape to match your backend
-                const res = await axios.get(`${BASE_URL}/api/preferences/`, {
-                    params: { user_id: userId },
-                });
-
-                // Possible shapes:
-                // 1) { activities, env, intensity, time }
-                // 2) { preferences: { activities, env, intensity, time } }
-                const prefs =
-                    res.data?.preferences && typeof res.data.preferences === "object"
-                        ? res.data.preferences
-                        : res.data;
-
-                console.log("Loaded backend preferences:", prefs);
-                applyBackendPreferences(prefs);
-            } catch (err) {
-                console.log(
-                    "No existing preferences or failed to load:",
-                    err.response?.data || err.message
-                );
-                // it's okay if there are none — user is probably new
-            }
-        };
-
-        fetchExistingPreferences();
-    }, [userId, BASE_URL]);
 
   const handleSave = async () => {
-    // simple validation before we flip isSaving
     if (!env) {
       setAlertEnvVisible(true);
       return;
@@ -235,6 +280,7 @@ export default function UserPreferencesScreen({ route }) {
     }
 
     const selectedActivities = getSelectedActivities();
+
     const payload = {
       user_id: userId,
       activities: selectedActivities,
@@ -243,11 +289,12 @@ export default function UserPreferencesScreen({ route }) {
       time: time.toISOString(),
     };
 
+
     try {
       setIsSaving(true);
       console.log("Saving preferences payload:", payload);
 
-      await axios.post(`${BASE_URL}/api/preferences/`, payload);
+      await axios.put(`${BASE_URL}/user/preferences`, payload);  // 👈 use PUT here
 
       navigation.navigate("MapScreen", {
         userId,
@@ -267,7 +314,7 @@ export default function UserPreferencesScreen({ route }) {
   };
 
 
-    return (
+  return (
         <View style={gs.screen}>
             <CustomAlert
                 visible={alertEnvVisible}

@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 
-import {
-    View,
-    StyleSheet,
-
-} from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import MapComponent from "./Components/MapComponent";
 import MaterialDesignIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import UserPreferencesScreen from "../UserPreferenceScreen/UserPreferencesScreen";
@@ -18,7 +14,7 @@ import { useRoute, useNavigation } from "@react-navigation/native";
 export default function MapScreen() {
     const route = useRoute();
     const navigation = useNavigation();
-
+  const BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
     const { userId, email } = route.params ?? {};
 
     const handleLogout = () => {
@@ -31,19 +27,20 @@ export default function MapScreen() {
     };
 
 
-    const handleNavigationToPreferencesScreen = () => {
-        if (!userId) {
-            console.log("⚠️ No userId when trying to go to UserPreferencesScreen");
-        }
-        console.log("MapScreen params:", route.params);
+  const handleNavigationToPreferencesScreen = () => {
+    if (!userId) {
+      console.log("⚠️ No userId when trying to go to UserPreferencesScreen");
+      return;
+    }
 
-        navigation.navigate("UserPreferencesScreen", {
-            userId,
-            email,
-        });
-    };
+    navigation.navigate("UserPreferencesScreen", {
+      userId,
+      email,
+    });
+  };
 
-    return (
+
+  return (
         <View style={styles.container}>
             <MapComponent userId={userId} />
 
