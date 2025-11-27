@@ -145,19 +145,9 @@ export default function UserPreferencesScreen({ route }) {
   const BASE_URL =
     Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
 
-  const isRaining = true;
-  useFocusEffect(
-    useCallback(() => {
-      console.log("📌 Screen is now in focus!");
+  const [isRaining, setIsRaining] = useState(false);
 
-      // Run your function
-      fetchExistingPreferences();
 
-      return () => {
-        console.log("📌 Screen lost focus");
-      };
-    }, [fetchExistingPreferences])
-  );
 
   const applyBackendPreferences = useCallback((prefs) => {
     if (!prefs) return;
@@ -237,18 +227,52 @@ export default function UserPreferencesScreen({ route }) {
     }
   }, [userId, BASE_URL, applyBackendPreferences]);
 
+  const fetchWeather = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const res = await axios.get(`${BASE_URL}/user/weather`, {
+        params: { user_id: userId },
+      });
+
+      const data = res.data.weather || res.data;
+      if (!data) return;
+
+      // treat these as “raining”
+      const rainingMains = ["Rain", "Drizzle", "Thunderstorm"];
+
+      const raining = rainingMains.includes(data.main);
+      console.log("Backend weather:", data.main, "→ isRaining =", raining);
+
+      setIsRaining(raining);
+
+      // Optional: if backend says it's raining and user already chose Outdoor,
+      // pop the alert when screen opens.
+      if (raining && env === "Outdoor") {
+        setRainAlertVisible(true);
+      }
+    } catch (err) {
+      console.log(
+        "Failed to fetch weather:",
+        err.response?.data || err.message
+      );
+    }
+  }, [userId, BASE_URL, env]);
 
 
   useFocusEffect(
     useCallback(() => {
       console.log("===== UserPreferencesScreen FOCUSED, userId =", userId, "=====");
-      fetchExistingPreferences();
+
+      fetchExistingPreferences();  // load prefs
+      fetchWeather();              // load weather from backend
 
       return () => {
         console.log("===== UserPreferencesScreen UNFOCUSED =====");
       };
-    }, [fetchExistingPreferences, userId])
+    }, [fetchExistingPreferences, fetchWeather, userId])
   );
+
 
 
 

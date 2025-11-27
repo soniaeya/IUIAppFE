@@ -44,6 +44,9 @@ export default function MapComponent({ userId  }) {
   const [currentTimeString, setCurrentTimeString] = useState("");
   const [showWeatherModal, setShowWeatherModal] = useState(false);
 
+  const lastWeatherRef = useRef(null);
+  const hasWeatherLoadedRef = useRef(false);
+
   // Utility functions
   const buildPreferredTimeToday = useCallback(() => {
     if (!preferredTime) return null;
@@ -657,6 +660,24 @@ export default function MapComponent({ userId  }) {
 
           if (!isMounted || !data) return;
 
+          // 🌦️ Detect change vs previous weather
+          const prev = lastWeatherRef.current;
+          const hasPrev = hasWeatherLoadedRef.current;
+
+          // Example rule: show modal if `main` changed
+          if (
+            hasPrev &&
+            prev &&
+            prev.main !== data.main
+          ) {
+            setShowWeatherModal(true);
+          }
+
+          // Update refs for next comparison
+          lastWeatherRef.current = data;
+          hasWeatherLoadedRef.current = true;
+
+          // Update UI state
           setWeatherInfo({
             main: data.main,
             description: data.description,
@@ -669,6 +690,7 @@ export default function MapComponent({ userId  }) {
           );
         }
       };
+
 
       fetchWeather();
       const intervalId = setInterval(fetchWeather, 5000);
@@ -852,13 +874,14 @@ export default function MapComponent({ userId  }) {
         </View>
       )}
 
-      {showWeatherModal && (
+      {showWeatherModal && weatherInfo && (
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>🌧️ Rain Alert</Text>
+            <Text style={styles.modalTitle}>Weather Updated</Text>
             <Text style={styles.modalText}>
-              It's currently raining in your area.
-              You may prefer **Indoor** activities today.
+              {`Weather is now ${weatherInfo.main}${
+                weatherInfo.description ? ` – ${weatherInfo.description}` : ""
+              }.`}
             </Text>
             <TouchableOpacity
               style={styles.modalButton}
@@ -869,6 +892,7 @@ export default function MapComponent({ userId  }) {
           </View>
         </View>
       )}
+
 
       {timeChangeModalVisible && (
         <View style={styles.modalOverlay}>
