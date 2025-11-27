@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Alert, AlertEnv, Platform, View} from 'react-native';
+import {Alert, Platform, View} from 'react-native';
 import styled from 'styled-components/native';
 import {gs} from '../theme/GlobalStyles';
 import {useNavigation} from '@react-navigation/native';
@@ -222,53 +222,49 @@ export default function UserPreferencesScreen({ route }) {
         fetchExistingPreferences();
     }, [userId, BASE_URL]);
 
+  const handleSave = async () => {
+    // simple validation before we flip isSaving
+    if (!env) {
+      setAlertEnvVisible(true);
+      return;
+    }
 
-    const handleSave = async () => {
-        try {
-            setIsSaving(true);
+    if (!intensity) {
+      setIntensityAlertVisible(true);
+      return;
+    }
 
-            if (!env) {
-                setAlertEnvVisible(true);
-                return;
-            }
-
-            if (!intensity) {
-                setIntensityAlertVisible(true);
-                return;
-            }
-
-            const selectedActivities = getSelectedActivities();
-
-            const payload = {
-                user_id: userId,              // ⭐ link prefs to this user
-                activities: selectedActivities,
-                env,
-                intensity,
-                time: time.toISOString(),
-            };
-
-            console.log("Saving preferences payload:", payload);
-
-            // MUST IMPORT Alert ABOVE
-            const response = await axios.post(`${BASE_URL}/api/preferences/`, payload);
-
-            navigation.navigate("MapScreen", {
-                userId,
-                preferencesSet: true,
-            });
-        } catch (err) {
-            if (err.response) {
-                console.error("Server error:", err.response.data);
-                Alert.alert("Failed", JSON.stringify(err.response.data));
-            } else {
-                console.error("Network error:", err);
-                Alert.alert("Error", "Network failure");
-            }
-        } finally {
-            setIsSaving(false);
-        }
+    const selectedActivities = getSelectedActivities();
+    const payload = {
+      user_id: userId,
+      activities: selectedActivities,
+      env,
+      intensity,
+      time: time.toISOString(),
     };
 
+    try {
+      setIsSaving(true);
+      console.log("Saving preferences payload:", payload);
+
+      await axios.post(`${BASE_URL}/api/preferences/`, payload);
+
+      navigation.navigate("MapScreen", {
+        userId,
+        preferencesSet: true,
+      });
+    } catch (err) {
+      if (err.response) {
+        console.error("Server error:", err.response.data);
+        Alert.alert("Failed", JSON.stringify(err.response.data));
+      } else {
+        console.error("Network error:", err);
+        Alert.alert("Error", "Network failure");
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
 
     return (

@@ -97,8 +97,8 @@ export default function MapComponent({ userId  }) {
         pollPreferredTime();
         const interval = setInterval(pollPreferredTime, 3000);
 
-        return () => clearInterval(interval);
-    }, [userId, BASE_URL, fetchRecommendations, preferredTime]);
+    }, [userId, BASE_URL, preferredTime]);
+
 
 
 
