@@ -228,34 +228,32 @@ export default function UserPreferencesScreen({ route }) {
   }, [userId, BASE_URL, applyBackendPreferences]);
 
   const fetchWeather = useCallback(async () => {
-    if (!userId) return;
+
 
     try {
       const res = await axios.get(`${BASE_URL}/user/weather`, {
         params: { user_id: userId },
       });
 
-      const data = res.data.weather || res.data;
-      if (!data) return;
+      const data = res.data;
 
-      // treat these as “raining”
-      const rainingMains = ["Rain", "Drizzle", "Thunderstorm"];
 
-      const raining = rainingMains.includes(data.main);
+      const BAD_FOR_OUTDOOR = "Rain";
+
+      const raining = BAD_FOR_OUTDOOR === data.main;
       console.log("Backend weather:", data.main, "→ isRaining =", raining);
 
       setIsRaining(raining);
 
-      // Optional: if backend says it's raining and user already chose Outdoor,
-      // pop the alert when screen opens.
       if (raining && env === "Outdoor") {
         setRainAlertVisible(true);
       }
-    } catch (err) {
-      console.log(
-        "Failed to fetch weather:",
-        err.response?.data || err.message
-      );
+      else {
+        setRainAlertVisible(false);
+      }
+    }
+    catch (err) {
+      console.log("Failed to fetch weather:", err.response?.data || err.message);
     }
   }, [userId, BASE_URL, env]);
 
@@ -279,9 +277,12 @@ export default function UserPreferencesScreen({ route }) {
 
   const handleEnvChange = (newEnv) => {
     if (newEnv === "Outdoor" && isRaining) {
-      setRainAlertVisible(true);
+      setRainAlertVisible(true);      // show warning
+    } else {
+      setRainAlertVisible(false);     // hide if not Outdoor/raining
     }
-    setEnv(newEnv);
+
+    setEnv(newEnv);                   // still let user choose Outdoor
   };
 
   const getSelectedActivities = () =>
@@ -385,59 +386,58 @@ export default function UserPreferencesScreen({ route }) {
                 <Title>Activity</Title>
 
                 <GridContainer>
-                    {Object.entries(activityConfig).map(([key, cfg]) => (
-                        <ActivityToggleButton
-                            key={key}
-                            activityLabel={cfg.label}      // from config
-                            value={cfg.active}             // on/off from config
-                            onChange={(newVal) => {
-                                setActivityConfig(prev => {
-                                    const next = {
-                                        ...prev,
-                                        [key]: {
-                                            ...prev[key],
-                                            active: newVal,
-                                        },
-                                    };
+                  {Object.entries(activityConfig).map(([key, cfg]) => (
+                    <ActivityToggleButton
+                      key={key}
+                      activityLabel={cfg.label}
+                      value={cfg.active}
+                      onChange={(newVal) => {
+                        setActivityConfig(prev => {
+                          const next = {
+                            ...prev,
+                            [key]: {
+                              ...prev[key],
+                              active: newVal,
+                            },
+                          };
+                          console.log({ [cfg.type]: newVal });
+                          return next;
+                        });
 
-                                    console.log({ [cfg.type]: newVal });
-                                    return next;
-                                });
-
-                                if (newVal) {
-
-                                    setEnv(cfg.env);
-                                }
-                            }}
-
-                        />
-                    ))}
+                        if (newVal) {
+                          // ✅ go through the same weather logic
+                          handleEnvChange(cfg.env);
+                        }
+                      }}
+                    />
+                  ))}
                 </GridContainer>
+
 
 
             </ItemPreferenceDiv>
             <ItemPreferenceDiv>
-                <ItemPreferenceLine></ItemPreferenceLine>
+                <ItemPreferenceLine />
                 <Title>Environment</Title>
                 <IndoorOutdoorDropdown value={env} onChange={handleEnvChange} />
 
 
             </ItemPreferenceDiv>
-                <ItemPreferenceLine></ItemPreferenceLine>
+                <ItemPreferenceLine />
                 <ItemPreferenceDiv>
 
                     <Title>Intensity</Title>
                     <IntensityDropdown value={intensity} onChange={setIntensity} />
                 </ItemPreferenceDiv>
-                <ItemPreferenceLine></ItemPreferenceLine>
+                <ItemPreferenceLine />
 
                 <ItemPreferenceDiv>
                 <Title>Preferred Time</Title>
-                    <TimePickerField value={time} onChange={setTime}></TimePickerField>
+                    <TimePickerField value={time} onChange={setTime} />
 
             </ItemPreferenceDiv>
 
-                <ItemPreferenceLine></ItemPreferenceLine>
+                <ItemPreferenceLine />
             <ItemPreferenceDiv>
 
                 <SaveButton onPress={handleSave}>
