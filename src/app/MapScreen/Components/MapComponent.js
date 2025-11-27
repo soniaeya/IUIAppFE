@@ -6,8 +6,10 @@ import Geolocation from '@react-native-community/geolocation';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import axios from "axios";
 import RecommendationBox from "./RecommendationBox";
-import {LoadingRecommendation} from "./LoadingRecommendation";
+import LoadingRecommendation from "./LoadingRecommendation";
 import { useFocusEffect } from '@react-navigation/native';
+import CustomAlert from "../../UserPreferenceScreen/Components/CustomAlert";
+
 
 // Move Google API key to a constant (consider moving to env file later)
 const GOOGLE_API_KEY = 'AIzaSyDgne1zVrGt-GIf8s2ayoNs6kE3O4iVUXc';
@@ -43,6 +45,7 @@ export default function MapComponent({ userId  }) {
   const [lastTimeString, setLastTimeString] = useState("");
   const [currentTimeString, setCurrentTimeString] = useState("");
   const [showWeatherModal, setShowWeatherModal] = useState(false);
+  const [noRecsModalVisible, setNoRecsModalVisible] = useState(false);
 
   const lastWeatherRef = useRef(null);
   const hasWeatherLoadedRef = useRef(false);
@@ -199,6 +202,7 @@ export default function MapComponent({ userId  }) {
   }, [userId, BASE_URL]);
 
   // Fetch recommendations - fixed with proper dependencies
+  // Fetch recommendations - fixed with proper dependencies
   const fetchRecommendations = useCallback(async () => {
     if (!userId) return;
 
@@ -209,7 +213,13 @@ export default function MapComponent({ userId  }) {
         params: { user_id: userId },
       });
 
-      setRecommendations(res.data.recommendations || []);
+      const recs = res.data.recommendations || [];
+      setRecommendations(recs);
+
+      // Show modal if no recommendations after loading
+      if (recs.length === 0) {
+        setNoRecsModalVisible(true);
+      }
     } catch (err) {
       if (err.response?.status === 400) {
         console.log("➡️ Preferences not set yet. Skipping recommendations.");
@@ -734,6 +744,12 @@ export default function MapComponent({ userId  }) {
   return (
     <View style={[styles.container]}>
       <View style={[styles.searchContainer, {zIndex: 1999, top: 15, position: "absolute"}]}>
+        <CustomAlert
+          visible={noRecsModalVisible}
+          title="No Recommendations"
+          message="There are no recommendations available at this time. Please check your preferences or try again later."
+          onClose={() => setNoRecsModalVisible(false)}
+        />
         {weatherInfo && (
           <View
             style={[
@@ -803,8 +819,12 @@ export default function MapComponent({ userId  }) {
       </View>
 
       {recLoading || recommendations.length === 0 ? (
+
         <LoadingRecommendation />
-      ) : (
+
+        )
+        :
+        (
         <RecommendationBox
           key={recUiVersion}
           expanded={recExpanded}

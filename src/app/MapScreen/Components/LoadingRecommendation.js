@@ -6,7 +6,7 @@ import MaterialDesignIcons from "react-native-vector-icons/MaterialCommunityIcon
 
 const highlight = "#6f4b63";
 
-export function LoadingRecommendation() {
+export default function LoadingRecommendation() {
   const fadeAnim = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
