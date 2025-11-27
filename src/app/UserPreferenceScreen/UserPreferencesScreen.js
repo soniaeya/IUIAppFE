@@ -228,35 +228,32 @@ export default function UserPreferencesScreen({ route }) {
   }, [userId, BASE_URL, applyBackendPreferences]);
 
   const fetchWeather = useCallback(async () => {
-
-
     try {
       const res = await axios.get(`${BASE_URL}/user/weather`, {
         params: { user_id: userId },
       });
 
       const data = res.data;
-
-
       const BAD_FOR_OUTDOOR = "Rain";
-
       const raining = BAD_FOR_OUTDOOR === data.main;
       console.log("Backend weather:", data.main, "→ isRaining =", raining);
 
       setIsRaining(raining);
-
-      if (raining && env === "Outdoor") {
-        setRainAlertVisible(true);
-      }
-      else {
-        setRainAlertVisible(false);
-      }
     }
     catch (err) {
       console.log("Failed to fetch weather:", err.response?.data || err.message);
     }
-  }, [userId, BASE_URL, env]);
+  }, [userId, BASE_URL]); // ✅ Remove env - just fetch weather, don't check it here
 
+
+  useEffect(() => {
+    if (isRaining && env === "Outdoor") {
+      setRainAlertVisible(true);
+    }
+    else {
+      setRainAlertVisible(false);
+    }
+  }, [isRaining, env]);
 
   useFocusEffect(
     useCallback(() => {
@@ -272,17 +269,8 @@ export default function UserPreferencesScreen({ route }) {
   );
 
 
-
-
-
   const handleEnvChange = (newEnv) => {
-    if (newEnv === "Outdoor" && isRaining) {
-      setRainAlertVisible(true);      // show warning
-    } else {
-      setRainAlertVisible(false);     // hide if not Outdoor/raining
-    }
-
-    setEnv(newEnv);                   // still let user choose Outdoor
+    setEnv(newEnv);  // Just update env, the useEffect above will handle the alert
   };
 
   const getSelectedActivities = () =>
@@ -354,7 +342,7 @@ export default function UserPreferencesScreen({ route }) {
                 onClose={() => setIntensityAlertVisible(false)}
             />
 
-            {/* 🌧️ Rain + Outdoor warning */}
+
             <CustomAlert
                 visible={rainAlertVisible}
                 title="Weather Warning"
@@ -362,12 +350,7 @@ export default function UserPreferencesScreen({ route }) {
                 onClose={() => setRainAlertVisible(false)}
             />
 
-            <CustomAlert
-                visible={alertEnvVisible}
-                title="Missing Information"
-                message="Please select an environment (Indoor or Outdoor)"
-                onClose={() => setAlertEnvVisible(false)}
-            />
+
             <CustomAlert
                 visible={intensityAlertVisible}
                 title="Missing Information"
@@ -403,11 +386,6 @@ export default function UserPreferencesScreen({ route }) {
                           console.log({ [cfg.type]: newVal });
                           return next;
                         });
-
-                        if (newVal) {
-                          // ✅ go through the same weather logic
-                          handleEnvChange(cfg.env);
-                        }
                       }}
                     />
                   ))}
