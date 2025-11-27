@@ -7,6 +7,7 @@ import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplet
 import axios from "axios";
 import RecommendationBox from "./RecommendationBox";
 import {LoadingRecommendation} from "./LoadingRecommendation";
+import { useFocusEffect } from '@react-navigation/native';
 
 // Move Google API key to a constant (consider moving to env file later)
 const GOOGLE_API_KEY = 'AIzaSyDgne1zVrGt-GIf8s2ayoNs6kE3O4iVUXc';
@@ -636,13 +637,50 @@ export default function MapComponent({ userId  }) {
   }, [preferredTime, fetchRecommendations, buildPreferredTimeToday, checkIfOpen]);
 
   // Test weather (remove this in production)
-  useEffect(() => {
-    setWeatherInfo({
-      main: "Clear",
-      description: "clear sky",
-      temp: 12,
-    });
-  }, []);
+
+
+
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!userId) return;
+
+      let isMounted = true;
+
+      const fetchWeather = async () => {
+        try {
+          const res = await axios.get(`${BASE_URL}/user/weather`, {
+            params: { user_id: userId },
+          });
+
+          const data = res.data.weather || res.data;
+
+          if (!isMounted || !data) return;
+
+          setWeatherInfo({
+            main: data.main,
+            description: data.description,
+            temp: data.temp_c,
+          });
+        } catch (err) {
+          console.log(
+            "Error fetching weather:",
+            err.response?.data || err.message
+          );
+        }
+      };
+
+      fetchWeather();
+      const intervalId = setInterval(fetchWeather, 5000);
+
+      return () => {
+        isMounted = false;
+        clearInterval(intervalId);
+      };
+    }, [userId, BASE_URL])
+  );
+
+
 
   if (loading) {
     return (
