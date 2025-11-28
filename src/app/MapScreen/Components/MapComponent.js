@@ -245,7 +245,6 @@ export default function MapComponent({ userId  }) {
         params: { user_id: userId },
       });
 
-      console.log("GET /user/location response:", res.data);
 
       const { latitude, longitude } = res.data || {};
       if (latitude == null || longitude == null) {
@@ -275,10 +274,8 @@ export default function MapComponent({ userId  }) {
         const { latitude, longitude } = position.coords;
         const coords = { latitude, longitude };
 
-        console.log("📍 Device GPS:", coords);
 
         if (lastLocationSourceRef.current === "backend") {
-          console.log("Skipping GPS update — backend location is active");
           setLoading(false);
           return;
         }
@@ -506,7 +503,6 @@ export default function MapComponent({ userId  }) {
             }
           );
           if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-            console.log('Location permission granted');
             getCurrentLocation();
           } else {
             console.log('Location permission denied');

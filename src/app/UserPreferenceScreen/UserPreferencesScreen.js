@@ -150,11 +150,17 @@ export default function UserPreferencesScreen({ route }) {
 
 
   const applyBackendPreferences = useCallback((prefs) => {
-    if (!prefs) return;
+    if (!prefs) {
+      console.log("No preferences found in backend; resetting to defaults");
+      setEnv('');
+      setIntensity(null);
+      setTime(new Date());
+      setActivityConfig(ACTIVITY_CONFIG);
+      return;
+    }
 
     console.log("Applying preferences:", prefs);
 
-    // env / intensity / time from backend
     if (prefs.env) {
       console.log("Setting env to:", prefs.env);
       setEnv(prefs.env);
@@ -175,7 +181,6 @@ export default function UserPreferencesScreen({ route }) {
       }
     }
 
-    // activities → toggle the right buttons
     if (Array.isArray(prefs.activities)) {
       console.log("Setting activities to:", prefs.activities);
       setActivityConfig(prev => {
@@ -194,16 +199,12 @@ export default function UserPreferencesScreen({ route }) {
         return next;
       });
     }
-  }, []); // Empty deps since it only uses setters (which are stable)
+  }, []);
 
-
-  const fetchExistingPreferences = useCallback(async () => {
-    console.log("⚙️ fetchExistingPreferences CALLED, userId =", userId);
-
-    if (!userId) {
-      console.log("⛔ No userId, aborting fetchExistingPreferences");
-      return;
-    }
+  const fetchPrefs = useCallback(async () => {
+    console.log("🔍 fetchPrefs STARTED");
+    console.log("userId:", userId);
+    console.log("BASE_URL:", BASE_URL);
 
     try {
       console.log("Fetching preferences for user:", userId);
@@ -212,20 +213,26 @@ export default function UserPreferencesScreen({ route }) {
         params: { user_id: userId },
       });
 
-      const prefs =
-        res.data?.preferences && typeof res.data.preferences === "object"
-          ? res.data.preferences
-          : res.data;
+      console.log("✅ Response received:", res.data);
+
+      const prefs = res.data?.preferences ?? null;
 
       console.log("Loaded backend preferences:", prefs);
       applyBackendPreferences(prefs);
-    } catch (err) {
+    }
+    catch (err) {
       console.log(
-        "No existing preferences or failed to load:",
+        "❌ No existing preferences or failed to load:",
         err.response?.data || err.message
       );
+      // optional: reset state if you want no backend prefs to clear UI
+      applyBackendPreferences(null);
     }
   }, [userId, BASE_URL, applyBackendPreferences]);
+
+
+
+
 
   const fetchWeather = useCallback(async () => {
     try {
@@ -243,29 +250,32 @@ export default function UserPreferencesScreen({ route }) {
     catch (err) {
       console.log("Failed to fetch weather:", err.response?.data || err.message);
     }
-  }, [userId, BASE_URL]); // ✅ Remove env - just fetch weather, don't check it here
+  }, [userId, BASE_URL]);
 
-
+  // ✅ Use a separate useEffect to handle the rain alert when env or isRaining changes
   useEffect(() => {
     if (isRaining && env === "Outdoor") {
       setRainAlertVisible(true);
-    }
-    else {
+    } else {
       setRainAlertVisible(false);
     }
   }, [isRaining, env]);
+
+
+
 
   useFocusEffect(
     useCallback(() => {
       console.log("===== UserPreferencesScreen FOCUSED, userId =", userId, "=====");
 
-      fetchExistingPreferences();  // load prefs
+      fetchPrefs();
       fetchWeather();              // load weather from backend
+
 
       return () => {
         console.log("===== UserPreferencesScreen UNFOCUSED =====");
       };
-    }, [fetchExistingPreferences, fetchWeather, userId])
+    }, [fetchPrefs, fetchWeather, userId])
   );
 
 
@@ -281,6 +291,7 @@ export default function UserPreferencesScreen({ route }) {
   // ✅ Wrap in useCallback with proper dependencies
 
 
+
   const handleSave = async () => {
     if (!env) {
       setAlertEnvVisible(true);
@@ -294,6 +305,9 @@ export default function UserPreferencesScreen({ route }) {
 
     const selectedActivities = getSelectedActivities();
 
+    console.log("📝 Selected activities before save:", selectedActivities);
+    console.log("📝 Current activityConfig state:", activityConfig);
+
     const payload = {
       user_id: userId,
       activities: selectedActivities,
@@ -302,23 +316,26 @@ export default function UserPreferencesScreen({ route }) {
       time: time.toISOString(),
     };
 
-
     try {
       setIsSaving(true);
-      console.log("Saving preferences payload:", payload);
+      console.log("💾 Saving preferences payload:", payload);
 
-      await axios.put(`${BASE_URL}/user/preferences`, payload);  // 👈 use PUT here
+      const response = await axios.put(`${BASE_URL}/user/preferences`, payload);
+
+      console.log("✅ Save response:", response.data);
+      console.log("✅ Successfully saved with activities:", selectedActivities);
 
       navigation.navigate("MapScreen", {
         userId,
         preferencesSet: true,
       });
-    } catch (err) {
+    }
+    catch (err) {
       if (err.response) {
-        console.error("Server error:", err.response.data);
+        console.error("❌ Server error:", err.response.data);
         Alert.alert("Failed", JSON.stringify(err.response.data));
       } else {
-        console.error("Network error:", err);
+        console.error("❌ Network error:", err);
         Alert.alert("Error", "Network failure");
       }
     } finally {
@@ -334,12 +351,6 @@ export default function UserPreferencesScreen({ route }) {
                 title="Missing Information"
                 message="Please select an environment (Indoor or Outdoor)"
                 onClose={() => setAlertEnvVisible(false)}
-            />
-            <CustomAlert
-                visible={intensityAlertVisible}
-                title="Missing Information"
-                message="Please select an intensity level"
-                onClose={() => setIntensityAlertVisible(false)}
             />
 
 

@@ -1,4 +1,5 @@
+cd IUIAppFE
 npm start --reset-cache
 
+cd IUIAppFE
 npx react-native run-android
-
