@@ -46,6 +46,8 @@ export default function MapComponent({ userId  }) {
   const [currentTimeString, setCurrentTimeString] = useState("");
   const [showWeatherModal, setShowWeatherModal] = useState(false);
   const [noRecsModalVisible, setNoRecsModalVisible] = useState(false);
+  const [allRecsClosedModalVisible, setAllRecsClosedModalVisible] = useState(false); // New state for "all closed" alert
+  const [showRecommendationBox, setShowRecommendationBox] = useState(true); // New state to control visibility
 
   const lastWeatherRef = useRef(null);
   const hasWeatherLoadedRef = useRef(false);
@@ -215,6 +217,8 @@ export default function MapComponent({ userId  }) {
 
       const recs = res.data.recommendations || [];
       setRecommendations(recs);
+      setAllRecsClosedModalVisible(false); // Reset this modal when new recommendations are fetched.
+      setShowRecommendationBox(true); // Show recommendation box when new recommendations are fetched
 
       // Show modal if no recommendations after loading
       if (recs.length === 0) {
@@ -466,11 +470,17 @@ export default function MapComponent({ userId  }) {
 
       if (isOpenNow || isOpenAtPreferred) {
         setCurrentIdx(currentIndex);
+        setAllRecsClosedModalVisible(false); // Hide the modal if an open place is found
+        setShowRecommendationBox(true); // Show recommendation box
         return;
       }
 
       currentIndex = (currentIndex + step + recommendations.length) % recommendations.length;
       tries++;
+    }
+    if (tries === recommendations.length) {
+      setAllRecsClosedModalVisible(true); // Show the "all closed" modal
+      setShowRecommendationBox(false); // Hide recommendation box
     }
   }, [recommendations, buildPreferredTimeToday, selectFirstPlaceForText, checkIfOpen]);
 
@@ -746,6 +756,12 @@ export default function MapComponent({ userId  }) {
           message="There are no recommendations available at this time. Please check your preferences or try again later."
           onClose={() => setNoRecsModalVisible(false)}
         />
+        <CustomAlert // New alert for when all recommendations are closed
+          visible={allRecsClosedModalVisible}
+          title="All Recommendations Closed"
+          message="It looks like all recommended places are currently closed or will be closed at your preferred time. You might want to adjust your preferences."
+          onClose={() => setAllRecsClosedModalVisible(false)}
+        />
         {weatherInfo && (
           <View
             style={[
@@ -820,8 +836,8 @@ export default function MapComponent({ userId  }) {
 
         )
         :
-        (
-        <RecommendationBox
+        (showRecommendationBox && (
+          <RecommendationBox
           key={recUiVersion}
           expanded={recExpanded}
           userId={userId}
@@ -832,7 +848,7 @@ export default function MapComponent({ userId  }) {
           onSetRating={handleSetRating}
           setExpanded={setRecExpanded}
           distanceKm={selectedDistanceKm}
-        />
+        />)
       )}
 
       {location ? (
