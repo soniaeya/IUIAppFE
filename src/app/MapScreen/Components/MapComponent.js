@@ -19,13 +19,10 @@ export default function MapComponent({ userId  }) {
 
   // Refs
   const hasFetchedOnce = useRef(false);
-  const lastPrefsTimeRef = useRef(null);
   const mapRef = useRef(null);
   const searchRef = useRef(null);
-  const lastLocationSourceRef = useRef("backend");
   const lastServerTimeRef = useRef(null);
-
-  // State
+  const [showRecommendationBox, setShowRecommendationBox] = useState(false);
   const [recUiVersion, setRecUiVersion] = useState(0);
   const [recExpanded, setRecExpanded] = useState(false);
   const [location, setLocation] = useState(null);
@@ -46,13 +43,10 @@ export default function MapComponent({ userId  }) {
   const [currentTimeString, setCurrentTimeString] = useState("");
   const [showWeatherModal, setShowWeatherModal] = useState(false);
   const [noRecsModalVisible, setNoRecsModalVisible] = useState(false);
-  const [allRecsClosedModalVisible, setAllRecsClosedModalVisible] = useState(false); // New state for "all closed" alert
-  const [showRecommendationBox, setShowRecommendationBox] = useState(true); // New state to control visibility
-
+  const [allRecsClosedModalVisible, setAllRecsClosedModalVisible] = useState(false);
   const lastWeatherRef = useRef(null);
   const hasWeatherLoadedRef = useRef(false);
-  const lastDeviceTimeRef = useRef(new Date()); // New ref to store the last checked device time
-  // Utility functions
+  const lastDeviceTimeRef = useRef(new Date());
   const buildPreferredTimeToday = useCallback(() => {
     if (!preferredTime) return null;
     const now = new Date();
@@ -152,15 +146,14 @@ export default function MapComponent({ userId  }) {
     return `🌤️ Current weather: ${main || "Unknown"}`;
   }, []);
 
-  // Location update function
   const updateUserLocation = useCallback(async (coords, options = {}) => {
     const {
-      skipBackend = false,
+      // Removed: skipBackend = false,
       showPopup = false,
-      source = "device",
+      // Removed: source = "device",
     } = options;
 
-    lastLocationSourceRef.current = source;
+    // Removed: lastLocationSourceRef.current = source;
 
     setLocation(prev => {
       const changed =
@@ -181,27 +174,32 @@ export default function MapComponent({ userId  }) {
       );
     }
 
-    if (skipBackend || !userId) return;
+    // Removed: The following block that sent location to backend
+    // if (skipBackend || !userId) return;
 
-    try {
-      const payload = {
-        user_id: userId,
-        location: {
-          latitude: coords.latitude,
-          longitude: coords.longitude,
-        },
-      };
+    // try {
+    //   const payload = {
+    //     user_id: userId,
+    //     location: {
+    //       latitude: coords.latitude,
+    //       longitude: coords.longitude,
+    //     },
+    //   };
 
-      console.log("PUT /user/location payload:", payload);
-      const res = await axios.put(`${BASE_URL}/user/location`, payload);
-      console.log("User location updated in backend:", res.data);
-    } catch (err) {
-      console.log(
-        "Error updating backend location:",
-        err.response?.data || err.message
-      );
-    }
-  }, [userId, BASE_URL]);
+    //   console.log("PUT /user/location payload:", payload);
+    //   const res = await axios.put(`${BASE_URL}/user/location`, payload);
+    //   console.log("User location updated in backend:", res.data);
+    // } catch (err) {
+    //   console.log(
+    //     "Error updating backend location:",
+    //     err.response?.data || err.message
+    //   );
+    // }
+  }, []); // Dependencies updated
+
+
+
+
 
   // Fetch recommendations - fixed with proper dependencies
   // Fetch recommendations - fixed with proper dependencies
@@ -238,7 +236,7 @@ export default function MapComponent({ userId  }) {
     } finally {
       setRecLoading(false);
     }
-  }, [userId, BASE_URL]);
+  }, [userId, BASE_URL, setShowRecommendationBox]);
 
   // Backend location fetch
   const fetchBackendLocation = useCallback(async (showPopupOnChange = false) => {
@@ -272,27 +270,25 @@ export default function MapComponent({ userId  }) {
   }, [userId, BASE_URL, updateUserLocation]);
 
   // Get current location from device
+  // ... existing code ...
+
+  // Get current location from device
   const getCurrentLocation = useCallback(() => {
     Geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
         const coords = { latitude, longitude };
-
-
-        if (lastLocationSourceRef.current === "backend") {
-          setLoading(false);
-          return;
-        }
-
         const isFirstTime = !hasFetchedOnce.current;
         hasFetchedOnce.current = true;
 
         updateUserLocation(coords, {
+          skipBackend: false, // This update *should* go to the backend
           showPopup: !isFirstTime,
           source: "device",
         });
 
         setLoading(false);
+// ... existing code ...
       },
       (error) => {
         console.log("❌ Geolocation error:", error);
@@ -309,6 +305,8 @@ export default function MapComponent({ userId  }) {
       }
     );
   }, [updateUserLocation]);
+
+
   const handlePlaceSelect = useCallback((data, details) => {
     const placeId = details.place_id;
     const shortAddress = getShortAddress(details);
@@ -482,7 +480,7 @@ export default function MapComponent({ userId  }) {
       setAllRecsClosedModalVisible(true); // Show the "all closed" modal
       setShowRecommendationBox(false); // Hide recommendation box
     }
-  }, [recommendations, buildPreferredTimeToday, selectFirstPlaceForText, checkIfOpen]);
+  }, [recommendations, buildPreferredTimeToday, selectFirstPlaceForText, checkIfOpen, setShowRecommendationBox]);
 
   const handleNextRecommendation = useCallback(async () => {
     await skipClosed(currentIdx + 1, +1);
@@ -532,11 +530,7 @@ export default function MapComponent({ userId  }) {
     requestLocationPermission();
   }, [getCurrentLocation]);
 
-  // Load initial backend location
-  useEffect(() => {
-    if (!userId || location) return;
-    fetchBackendLocation(false);
-  }, [userId, location, fetchBackendLocation]);
+
 
   // Fetch recommendations on mount
   useEffect(() => {
@@ -566,16 +560,7 @@ export default function MapComponent({ userId  }) {
     fetchRatings();
   }, [userId, BASE_URL]);
 
-  // Poll backend location periodically
-  useEffect(() => {
-    if (!userId) return;
 
-    const interval = setInterval(() => {
-      fetchBackendLocation(true);
-    }, 15000);
-
-    return () => clearInterval(interval);
-  }, [userId, fetchBackendLocation]);
 
   // Poll device location periodically
   useEffect(() => {
