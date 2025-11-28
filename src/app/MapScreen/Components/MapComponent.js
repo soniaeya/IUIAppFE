@@ -51,7 +51,7 @@ export default function MapComponent({ userId  }) {
 
   const lastWeatherRef = useRef(null);
   const hasWeatherLoadedRef = useRef(false);
-
+  const lastDeviceTimeRef = useRef(new Date()); // New ref to store the last checked device time
   // Utility functions
   const buildPreferredTimeToday = useCallback(() => {
     if (!preferredTime) return null;
@@ -581,10 +581,20 @@ export default function MapComponent({ userId  }) {
   useEffect(() => {
     const interval = setInterval(() => {
       getCurrentLocation();
+      // Check for device time changes
+      const now = new Date();
+      if (Math.abs(now.getTime() - lastDeviceTimeRef.current.getTime()) > 60 * 1000) { // If time differs by more than 1 minute
+        setLastTimeString(formatTime(lastDeviceTimeRef.current));
+        setCurrentTimeString(formatTime(now));
+        setTimeChangeModalVisible(true);
+      }
+      lastDeviceTimeRef.current = now; // Update the last device time
+
+
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [getCurrentLocation]);
+  }, [getCurrentLocation, formatTime]);
 
   // Poll for backend time changes
   useEffect(() => {
