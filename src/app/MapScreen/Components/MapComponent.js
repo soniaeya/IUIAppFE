@@ -22,7 +22,7 @@ export default function MapComponent({ userId  }) {
   const mapRef = useRef(null);
   const searchRef = useRef(null);
   const lastServerTimeRef = useRef(null);
-  const [showRecommendationBox, setShowRecommendationBox] = useState(false);
+  const [showRecommendationBox, setShowRecommendationBox] = useState(true);
   const [recUiVersion, setRecUiVersion] = useState(0);
   const [recExpanded, setRecExpanded] = useState(false);
   const [location, setLocation] = useState(null);
@@ -825,7 +825,7 @@ export default function MapComponent({ userId  }) {
         />
       </View>
 
-      {recLoading || recommendations.length === 0 ? (
+      {recLoading ? (
 
         <LoadingRecommendation />
 
