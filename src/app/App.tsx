@@ -11,7 +11,6 @@ import MapScreen from './MapScreen/MapScreen';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import 'react-native-get-random-values';
-import { AppRegistry } from 'react-native';
 import LoginScreen from "./LoginScreen/LoginScreen";
 import SignupScreen from "./SignupScreen/SignupScreen";
 

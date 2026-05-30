@@ -10,6 +10,7 @@ import { ScrollView } from "react-native";
 import IndoorOutdoorDropdown from "./Components/IndoorOutdoorDropdown";
 import IntensityDropdown from "./Components/IntensityDropdown";
 import CustomAlert from "./Components/CustomAlert";
+import Geolocation from "@react-native-community/geolocation";
 const highlight = "#6f4b63"
 const dark_background = "#b0928f"
 const background_color= "white"
@@ -146,7 +147,6 @@ export default function UserPreferencesScreen({ route }) {
     Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
 
   const [isRaining, setIsRaining] = useState(false);
-
 
 
   const applyBackendPreferences = useCallback((prefs) => {
@@ -313,7 +313,7 @@ export default function UserPreferencesScreen({ route }) {
       activities: selectedActivities,
       env,
       intensity,
-      time: time.toISOString(),
+      time: time.toISOString()
     };
 
     try {

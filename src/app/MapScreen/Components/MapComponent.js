@@ -269,8 +269,7 @@ export default function MapComponent({ userId  }) {
     }
   }, [userId, BASE_URL, updateUserLocation]);
 
-  // Get current location from device
-  // ... existing code ...
+
 
   // Get current location from device
   const getCurrentLocation = useCallback(() => {
@@ -288,7 +287,6 @@ export default function MapComponent({ userId  }) {
         });
 
         setLoading(false);
-// ... existing code ...
       },
       (error) => {
         console.log("❌ Geolocation error:", error);
