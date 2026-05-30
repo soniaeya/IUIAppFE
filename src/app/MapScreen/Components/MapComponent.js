@@ -175,37 +175,9 @@ export default function MapComponent({ userId  }) {
         1000
       );
     }
-
      */
+  }, []);
 
-    // Removed: The following block that sent location to backend
-    // if (skipBackend || !userId) return;
-
-    // try {
-    //   const payload = {
-    //     user_id: userId,
-    //     location: {
-    //       latitude: coords.latitude,
-    //       longitude: coords.longitude,
-    //     },
-    //   };
-
-    //   console.log("PUT /user/location payload:", payload);
-    //   const res = await axios.put(`${BASE_URL}/user/location`, payload);
-    //   console.log("User location updated in backend:", res.data);
-    // } catch (err) {
-    //   console.log(
-    //     "Error updating backend location:",
-    //     err.response?.data || err.message
-    //   );
-    // }
-  }, []); // Dependencies updated
-
-
-
-
-
-  // Fetch recommendations - fixed with proper dependencies
   // Fetch recommendations - fixed with proper dependencies
   const fetchRecommendations = useCallback(async () => {
     if (!userId) return;
