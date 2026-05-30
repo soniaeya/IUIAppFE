@@ -167,12 +167,16 @@ export default function MapComponent({ userId  }) {
       return coords;
     });
 
+    // Goes to user current location
+    /*
     if (mapRef.current) {
       mapRef.current.animateToRegion(
         { ...coords, latitudeDelta: 0.01, longitudeDelta: 0.01 },
         1000
       );
     }
+
+     */
 
     // Removed: The following block that sent location to backend
     // if (skipBackend || !userId) return;
