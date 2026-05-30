@@ -181,9 +181,7 @@ export default function MapComponent({ userId  }) {
   // Fetch recommendations - fixed with proper dependencies
   const fetchRecommendations = useCallback(async () => {
     if (!userId) return;
-
     setRecLoading(true);
-
     try {
       const res = await axios.get(`${BASE_URL}/recommendations`, {
         params: { user_id: userId },
@@ -213,39 +211,6 @@ export default function MapComponent({ userId  }) {
       setRecLoading(false);
     }
   }, [userId, BASE_URL, setShowRecommendationBox]);
-
-  // Backend location fetch
-  const fetchBackendLocation = useCallback(async (showPopupOnChange = false) => {
-    if (!userId) return;
-
-    try {
-      const res = await axios.get(`${BASE_URL}/user/location`, {
-        params: { user_id: userId },
-      });
-
-
-      const { latitude, longitude } = res.data || {};
-      if (latitude == null || longitude == null) {
-        console.log("Backend has no location yet");
-        return;
-      }
-
-      const coords = { latitude, longitude };
-
-      await updateUserLocation(coords, {
-        skipBackend: true,
-        showPopup: showPopupOnChange,
-        source: "backend",
-      });
-    } catch (err) {
-      console.log(
-        "Could not fetch backend location:",
-        err.response?.data || err.message
-      );
-    }
-  }, [userId, BASE_URL, updateUserLocation]);
-
-
 
   // Get current location from device
   const getCurrentLocation = useCallback(() => {
@@ -279,7 +244,6 @@ export default function MapComponent({ userId  }) {
       }
     );
   }, [updateUserLocation]);
-
 
   const handlePlaceSelect = useCallback((data, details) => {
     const placeId = details.place_id;
@@ -402,16 +366,6 @@ export default function MapComponent({ userId  }) {
     }
   }, [handlePlaceSelect]);
 
-
-  const selectLocationByName = useCallback(async (name) => {
-    if (searchRef.current) {
-      searchRef.current.setAddressText(name);
-    }
-
-    setMapSearchQuery(name);
-    await selectFirstPlaceForText(name);
-  }, [selectFirstPlaceForText]);
-
   // Recommendation navigation
   const skipClosed = useCallback(async (startIdx, step) => {
     if (!recommendations.length) return;
@@ -504,8 +458,6 @@ export default function MapComponent({ userId  }) {
     requestLocationPermission();
   }, [getCurrentLocation]);
 
-
-
   // Fetch recommendations on mount
   useEffect(() => {
     fetchRecommendations();
@@ -534,8 +486,6 @@ export default function MapComponent({ userId  }) {
     fetchRatings();
   }, [userId, BASE_URL]);
 
-
-
   // Poll device location periodically
   useEffect(() => {
     const interval = setInterval(() => {
@@ -548,8 +498,6 @@ export default function MapComponent({ userId  }) {
         setTimeChangeModalVisible(true);
       }
       lastDeviceTimeRef.current = now; // Update the last device time
-
-
     }, 5000);
 
     return () => clearInterval(interval);
@@ -601,22 +549,17 @@ export default function MapComponent({ userId  }) {
   // Handle preferred time changes
   useEffect(() => {
     if (!preferredTime) return;
-
     console.log("⏰ Preferred time changed:", preferredTime.toISOString());
-
     fetchRecommendations();
     setRecExpanded(true);
     setRecUiVersion(v => v + 1);
     setCurrentIdx(0);
-
     setSelectedLocation(prev => {
       if (!prev) return prev;
-
       const prefDate = buildPreferredTimeToday();
       const updatedOpenAtPreferred = prefDate
         ? checkIfOpen(prev.rawPeriods, prefDate)
         : false;
-
       return {
         ...prev,
         openAtPreferredTime: updatedOpenAtPreferred,
@@ -624,17 +567,10 @@ export default function MapComponent({ userId  }) {
     });
   }, [preferredTime, fetchRecommendations, buildPreferredTimeToday, checkIfOpen]);
 
-  // Test weather (remove this in production)
-
-
-
-
   useFocusEffect(
     useCallback(() => {
       if (!userId) return;
-
       let isMounted = true;
-
       const fetchWeather = async () => {
         try {
           const res = await axios.get(`${BASE_URL}/user/weather`, {
@@ -676,7 +612,6 @@ export default function MapComponent({ userId  }) {
         }
       };
 
-
       fetchWeather();
       const intervalId = setInterval(fetchWeather, 5000);
 
@@ -686,8 +621,6 @@ export default function MapComponent({ userId  }) {
       };
     }, [userId, BASE_URL])
   );
-
-
 
   if (loading) {
     return (
